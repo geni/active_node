@@ -5,10 +5,6 @@ than ActiveResource and is specifically built with a Jiraph-based graph service 
 mind. Because of this, it probably will only be usefull to developers who are trying to
 bridge Jiraph to Ruby. For more information on Jiraph, see: http://github.com/ninjudd/jiraph.
 
-== Installation
-
-  $ sudo gem install active_node --source http://gemcutter.org
-
 == License:
 
 Copyright (c) 2010 Justin Balthrop, Geni.com; Published under The MIT License, see LICENSE
