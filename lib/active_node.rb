@@ -2,6 +2,9 @@ require 'net/http'
 require 'cgi'
 require 'json'
 
+$:.unshift(File.dirname(__FILE__))
+require 'active_node/base'
+
 module ActiveNode
   METHODS = [:get, :put, :post, :delete]
 
@@ -23,8 +26,20 @@ module ActiveNode
       end
     end
 
+    def node_host(host = nil)
+      if host
+        @node_host = host
+      else
+        @node_host ||= "localhost:9229"
+      end
+    end
+
+    def node_server
+      @node_server ||= ActiveNode.server(node_host)
+    end
+
     def new(*args)
-      if args.size == 1 and args.first =~ /^(\w)\/(\d)$/
+      if args.size == 1 and args.first.is_a?(String) and args.first =~ /^(\w)\/(\d)$/
         raise "invalid node type" unless $1 == node_type
         model = respond_to?(:find) ? find($2.to_i) : super()
         model.instance_variable_set(:@node_id, args.first)
@@ -52,7 +67,7 @@ module ActiveNode
             end
           end
 
-          response = server.send(method, resource, *args)
+          response = node_server.send(method, resource, *args)
           if response.code =~ /\A2\d{2}\z/
             body = response.body
             return nil if body.empty? or body == 'null'
@@ -81,8 +96,10 @@ module ActiveNode
 end
 
 class Class
-  def active_node
+  def active_node(opts = {})
     extend  ActiveNode::ClassMethods
     include ActiveNode::InstanceMethods
+    node_host opts[:host]
+    node_type opts[:type]
   end
 end
