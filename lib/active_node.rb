@@ -20,7 +20,7 @@ module ActiveNode
 
   module ClassMethods
     def node_type
-      @node_type ||= name.downcase
+      @node_type ||= name.underscore
     end
 
     def node_server
@@ -46,11 +46,11 @@ module ActiveNode
 
     def init(id_or_layers)
       if id_or_layers.kind_of?(Hash)
-        node_id = id_or_layers.delete(:id)
+        node_id = id_or_layers.delete(:id) || id_or_layers.delete('id')
         layer_data = {}
         id_or_layers.each do |key, val|
           raise ArgumentError, "layer data must be a Hash; found: #{val.class}" unless val.kind_of?(Hash)
-          layer_data[key] = val.clone.freeze
+          layer_data[key.to_sym] = val.clone.freeze
         end
       else
         node_id = id_or_layers
@@ -72,20 +72,19 @@ module ActiveNode
 
     METHODS.each do |method|
       put_or_post = [:put, :post].include?(method)
-      define_method(method) do |resource, *args|
+      define_method(method.to_s.upcase) do |resource, *args|
         resource = "/#{node_type}/#{resource}" unless resource =~ /^\// # support relative and absolute paths
-        header   = { 'Content-type' => 'application/json' }
 
         begin
           if put_or_post
             raise ArgumentError, "wrong number of arguments (#{args.size} for 2)" if args.size > 2
             data = args.first.to_json
             resource << query_string(args.last) if args.size == 2
-            response = node_server.send(method, resource, data, header)
+            response = node_server.send(method, resource, data, 'Content-type' => 'application/json')
           else
             raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" if args.size > 1
             resource << query_string(args.last) if args.size == 1
-            response = node_server.send(method, resource, header)
+            response = node_server.send(method, resource)
           end
 
           if response.code =~ /\A2\d{2}\z/
@@ -105,8 +104,8 @@ module ActiveNode
 
   module InstanceMethods
     METHODS.each do |method|
-      define_method(method) do |resource, *args|
-        resource = "/#{node_id}/#{resource}" unless resource =~ /^\//
+      define_method(method.to_s.upcase) do |resource, *args|
+        resource = "/#{node_id}/#{resource}" unless resource =~ /^\// # support relative and absolute paths
         self.class.send(method, resource, *args)
       end
     end
@@ -114,6 +113,19 @@ module ActiveNode
     def [](layer)
       layer = layer.to_sym
       @layer_data[layer] ||= get(layer).freeze
+    end
+  end
+end
+
+if String.instance_methods.include?('underscore')
+  class String
+    # Add underscore method if it isn't there. Copied from ActiveSupport::Inflector
+    def underscore(camel_cased_word)
+      camel_cased_word.to_s.gsub(/::/, '/').
+        gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+        gsub(/([a-z\d])([A-Z])/,'\1_\2').
+        tr("-", "_").
+        downcase
     end
   end
 end
