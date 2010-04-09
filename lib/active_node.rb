@@ -2,9 +2,6 @@ require 'net/http'
 require 'cgi'
 require 'json'
 
-$:.unshift(File.dirname(__FILE__))
-require 'active_node/base'
-
 module ActiveNode
   DEFAULT_HOST = "localhost:9229"
   METHODS = [:get, :put, :post, :delete]
@@ -64,7 +61,7 @@ module ActiveNode
     def query_string(opts)
       if opts
         raise ArgumentError, "opts must be Hash" unless opts.kind_of?(Hash)
-        "?" << args.pop.collect do |key, val|
+        "?" << opts.collect do |key, val|
           "#{CGI.escape(key.to_s)}=#{CGI.escape(val.to_s)}"
         end.join('&')
       end
@@ -79,12 +76,15 @@ module ActiveNode
           if put_or_post
             raise ArgumentError, "wrong number of arguments (#{args.size} for 2)" if args.size > 2
             data = args.first.to_json
-            resource << query_string(args.last) if args.size == 2
-            response = node_server.send(method, resource, data, 'Content-type' => 'application/json')
+            headers = { 'Content-type' => 'application/json' }
+            headers.merge!(args.last) if args.size >= 2
+            response = node_server.send(method, resource, data, headers)
           else
-            raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" if args.size > 1
-            resource << query_string(args.last) if args.size == 1
-            response = node_server.send(method, resource)
+            raise ArgumentError, "wrong number of arguments (#{args.size} for 2)" if args.size > 2
+            resource << query_string(args.first) if args.size >= 1
+            headers = { }
+            headers.merge!(args.last) if args.size >= 2
+            response = node_server.send(method, resource, nil, headers)
           end
 
           if response.code =~ /\A2\d{2}\z/
@@ -92,11 +92,11 @@ module ActiveNode
             return nil if body.empty? or body == 'null'
             return JSON.load(body)
           end
-          raise ActiveNode::Error, "#{method} to http://#{host}#{resource} failed with HTTP #{response.code}"
+          raise ActiveNode::Error, "#{method} to http://#{node_host}#{resource} failed with HTTP #{response.code}"
         rescue Errno::ECONNREFUSED => e
-          raise ActiveNode::ConnectionError, "connection refused on #{method} to http://#{host}#{resource}"
+          raise ActiveNode::ConnectionError, "connection refused on #{method} to http://#{node_host}#{resource}"
         rescue TimeoutError => e
-          raise ActiveNode::ConnectionError, "timeout on #{method} to http://#{host}#{resource}"
+          raise ActiveNode::ConnectionError, "timeout on #{method} to http://#{node_host}#{resource}"
         end
       end
     end
@@ -105,8 +105,8 @@ module ActiveNode
   module InstanceMethods
     METHODS.each do |method|
       define_method(method.to_s.upcase) do |resource, *args|
-        resource = "/#{node_id}/#{resource}" unless resource =~ /^\// # support relative and absolute paths
-        self.class.send(method, resource, *args)
+        resource = "/#{node_id || self.class.node_type}/#{resource}" unless resource =~ /^\// # support relative and absolute paths
+        self.class.send(method.to_s.upcase, resource, *args)
       end
     end
 
@@ -117,11 +117,14 @@ module ActiveNode
   end
 end
 
-if String.instance_methods.include?('underscore')
+$:.unshift(File.dirname(__FILE__))
+require 'active_node/base'
+
+unless String.instance_methods.include?('underscore')
   class String
     # Add underscore method if it isn't there. Copied from ActiveSupport::Inflector
-    def underscore(camel_cased_word)
-      camel_cased_word.to_s.gsub(/::/, '/').
+    def underscore
+      self.gsub(/::/, '/').
         gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
         gsub(/([a-z\d])([A-Z])/,'\1_\2').
         tr("-", "_").
