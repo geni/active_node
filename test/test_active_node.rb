@@ -25,7 +25,7 @@ class ActiveNodeTest < Test::Unit::TestCase
 
     should "set @layer_data in init" do
       t = TestModel.init( 'test_model' => {:name => 'Charlie', 'occupation' => 'chocolate maker'} )
-      
+
       layer_data = t.instance_variable_get(:@layer_data)
       assert_not_nil layer_data
       assert_equal [:test_model],     layer_data.keys
@@ -67,7 +67,7 @@ class ActiveNodeTest < Test::Unit::TestCase
       assert_equal  :get,                    req[:method]
       assert_equal  '/test_model-1/profile', req[:resource]
     end
-    
+
     should 'pass extra params on query string' do
       server = TestModel.mock_server
       TestModel.init('test_model-1').POST('update', { :name => 'Bob' }, { 'test' => 'testing' })

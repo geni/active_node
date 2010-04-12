@@ -7,7 +7,7 @@ require 'pp'
 
 class TestServer
   attr_reader :requests
-  
+
   def self.create_response(code='200', body='')
     OpenStruct.new( :code => code, :body => body)
   end
@@ -16,7 +16,7 @@ class TestServer
     @requests  = []
     @responses = [mock_responses || self.class.create_response].flatten
   end
-  
+
   ActiveNode::METHODS.each do |method|
     define_method(method) do |resource, *args|
       (data, headers, extra_args) = args
