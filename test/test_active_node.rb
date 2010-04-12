@@ -68,14 +68,14 @@ class ActiveNodeTest < Test::Unit::TestCase
       assert_equal  '/test_model-1/profile', req[:resource]
     end
     
-    should 'pass user-specified headers' do
+    should 'pass extra params on query string' do
       server = TestModel.mock_server
-      TestModel.init('test_model-1').POST('update', { :name => 'Bob' }, { 'X-Test-Headers' => 'testing' })
+      TestModel.init('test_model-1').POST('update', { :name => 'Bob' }, { 'test' => 'testing' })
 
       assert_equal 1, server.requests.size
       req = server.requests.shift
 
-      assert_equal  'testing', req[:headers]['X-Test-Headers']
+      assert_equal  '/test_model-1/update?test=testing', req[:resource]
     end
   end
 end
