@@ -76,15 +76,12 @@ module ActiveNode
           if put_or_post
             raise ArgumentError, "wrong number of arguments (#{args.size} for 2)" if args.size > 2
             data = args.first.to_json
-            headers = { 'Content-type' => 'application/json' }
-            headers.merge!(args.last) if args.size >= 2
-            response = node_server.send(method, resource, data, headers)
+            resource << query_string(args.last) if args.size == 2
+            response = node_server.send(method, resource, data, 'Content-type' => 'application/json')
           else
-            raise ArgumentError, "wrong number of arguments (#{args.size} for 2)" if args.size > 2
-            resource << query_string(args.first) if args.size >= 1
-            headers = { }
-            headers.merge!(args.last) if args.size >= 2
-            response = node_server.send(method, resource, nil, headers)
+            raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" if args.size > 1
+            resource << query_string(args.last) if args.size == 1
+            response = node_server.send(method, resource)
           end
 
           if response.code =~ /\A2\d{2}\z/
@@ -105,7 +102,7 @@ module ActiveNode
   module InstanceMethods
     METHODS.each do |method|
       define_method(method.to_s.upcase) do |resource, *args|
-        resource = "/#{node_id || self.class.node_type}/#{resource}" unless resource =~ /^\// # support relative and absolute paths
+        resource = "/#{node_id}/#{resource}" unless resource =~ /^\// # support relative and absolute paths
         self.class.send(method.to_s.upcase, resource, *args)
       end
     end
