@@ -23,14 +23,12 @@ class ActiveNodeTest < Test::Unit::TestCase
       assert_equal 'model-43', t.instance_variable_get(:@node_id)
     end
 
-    should "set @layer_data in init" do
+    should "set cached layer_data in init" do
       t = TestModel.init( 'test_model' => {:name => 'Charlie', 'occupation' => 'chocolate maker'} )
 
-      layer_data = t.instance_variable_get(:@layer_data)
-      assert_not_nil layer_data
-      assert_equal [:test_model],     layer_data.keys
-      assert_equal 'Charlie',         layer_data[:test_model][:name]
-      assert_equal 'chocolate maker', layer_data[:test_model]['occupation']
+      assert_equal [:test_model],     t.layer_data.keys
+      assert_equal 'Charlie',         t.layer_data[:test_model][:name]
+      assert_equal 'chocolate maker', t.layer_data[:test_model]['occupation']
     end
 
     should "send attributes as JSON body on POST" do

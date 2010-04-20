@@ -20,15 +20,19 @@ module ActiveNode
       @node_type ||= name.underscore
     end
 
-    def node_server
-      @node_server ||= ActiveNode.server(node_host)
-    end
-
     def node_host(host = nil)
       if host
         @node_host = host
       else
         @node_host ||= self == ActiveNode::Base ? ActiveNode::DEFAULT_HOST : ActiveNode::Base.node_host
+      end
+    end
+
+    def node_server(server = nil)
+      if server
+        @node_server = server
+      else
+        @node_server ||= ActiveNode.server(node_host)
       end
     end
 
@@ -107,9 +111,28 @@ module ActiveNode
       end
     end
 
+    def layer_data
+      @layer_data ||= LayerData.new(self)
+    end
+  end
+
+  class LayerData
+    def initialize(node)
+      @node = node
+      @data = {}
+    end
+
     def [](layer)
       layer = layer.to_sym
-      @layer_data[layer] ||= get(layer).freeze
+      @data[layer] ||= node.get(layer).freeze
+    end
+
+    def keys
+      @data.keys
+    end
+
+    def values
+      @data.values
     end
   end
 end
@@ -134,7 +157,8 @@ class Class
   def active_node(opts = {})
     extend  ActiveNode::ClassMethods
     include ActiveNode::InstanceMethods
-    node_host  opts[:host]
-    load_using opts[:load_using]
+    node_host   opts[:host]
+    node_server opts[:node_server]
+    load_using  opts[:load_using]
   end
 end
