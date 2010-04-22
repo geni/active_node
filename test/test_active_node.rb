@@ -2,15 +2,15 @@ require File.dirname(__FILE__) + '/test_helper'
 
 class ActiveNodeTest < Test::Unit::TestCase
   context "An ActiveNode class" do
-    should "send attributes as JSON body on PUT" do
+    should "send attributes as JSON body on write" do
       server = TestModel.mock_server
 
-      TestModel.PUT('add', { :name => 'Harley' })
+      TestModel.write_graph('add', { :name => 'Harley' })
 
       assert_equal 1, server.requests.size
       req = server.requests.shift
 
-      assert_equal  :put,                         req[:method]
+      assert_equal  :post,                        req[:method]
       assert_equal  '/test_model/add',            req[:resource]
       assert_equal( {'name' => 'Harley'}.to_json, req[:data])
       assert_equal  'application/json',           req[:headers]['Content-type']
@@ -31,9 +31,9 @@ class ActiveNodeTest < Test::Unit::TestCase
       assert_equal 'chocolate maker', t.layer_data[:test_model]['occupation']
     end
 
-    should "send attributes as JSON body on POST" do
+    should "send attributes as JSON body on write" do
       server = TestModel.mock_server
-      TestModel.init('test_model-1').POST('update', { :name => 'Charlie' })
+      TestModel.init('test_model-1').write_graph('update', { :name => 'Charlie' })
 
       assert_equal 1, server.requests.size
       req = server.requests.shift
@@ -44,9 +44,9 @@ class ActiveNodeTest < Test::Unit::TestCase
       assert_equal  'application/json',            req[:headers]['Content-type']
     end
 
-    should "GET all attributes when called with no resource" do
+    should "read all attributes when called with no resource" do
       server = TestModel.mock_server
-      TestModel.init('test_model-1').GET('')
+      TestModel.init('test_model-1').read_graph('')
 
       assert_equal 1, server.requests.size
       req = server.requests.shift
@@ -55,9 +55,9 @@ class ActiveNodeTest < Test::Unit::TestCase
       assert_equal  '/test_model-1/', req[:resource]
     end
 
-    should "GET specified attributes when called with resource" do
+    should "read specified attributes when called with resource" do
       server = TestModel.mock_server
-      TestModel.init('test_model-1').GET('profile')
+      TestModel.init('test_model-1').read_graph('profile')
 
       assert_equal 1, server.requests.size
       req = server.requests.shift
@@ -68,7 +68,7 @@ class ActiveNodeTest < Test::Unit::TestCase
 
     should 'pass extra params on query string' do
       server = TestModel.mock_server
-      TestModel.init('test_model-1').POST('update', { :name => 'Bob' }, { 'test' => 'testing' })
+      TestModel.init('test_model-1').write_graph('update', { :name => 'Bob' }, { 'test' => 'testing' })
 
       assert_equal 1, server.requests.size
       req = server.requests.shift

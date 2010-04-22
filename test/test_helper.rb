@@ -5,7 +5,7 @@ require 'shoulda'
 require 'ostruct'
 require 'pp'
 
-class TestServer
+class TestHTTP
   attr_reader :requests
 
   def self.create_response(code='200', body='')
@@ -17,7 +17,7 @@ class TestServer
     @responses = [mock_responses || self.class.create_response].flatten
   end
 
-  ActiveNode::METHODS.each do |method|
+  [:get, :post].each do |method|
     define_method(method) do |resource, *args|
       (data, headers, extra_args) = args
       @requests << { :method     => method,
@@ -33,7 +33,6 @@ end
 
 class TestModel < ActiveNode::Base
   def self.mock_server(responses=nil)
-    self.node_host('test_server')
-    self.instance_variable_set(:@node_server, TestServer.new(responses))
+    ActiveNode.server(nil, nil).instance_variable_set(:@http, TestHTTP.new(responses))
   end
 end

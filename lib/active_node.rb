@@ -1,39 +1,60 @@
-require 'net/http'
-require 'cgi'
-require 'json'
-
 module ActiveNode
-  DEFAULT_HOST = "localhost:9229"
-  METHODS = [:get, :put, :post, :delete]
-
   class Error   < StandardError; end
   class ConnectionError < Error; end
   class TimeoutError    < Error; end
 
-  def self.server(host)
+  def self.server(type, path)
+    host = nil
+    routes(type).each do |pattern, route|
+      match = pattern.match(path)
+      host  = route.call(match.values_at(1..-1)) if match
+      break if host
+    end
+
     @servers ||= {}
-    @servers[host] ||= Net::HTTP.new(*host.split(':'))
+    @servers[host] ||= Server.new(host)
+  end
+
+  # inspired by Sinatra (sinatrarb.com)
+  def self.route(*args, &block)
+    if block_given?
+      # dynamic route
+      raise ArgumentError, "wrong number of arguments (#{args.size} for 2)" if args.size > 2
+      route = block
+    else
+      # static route
+      raise ArgumentError, "wrong number of arguments (#{args.size} for 3)" if args.size > 3
+      raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" if args.size < 1
+      route = args.pop
+    end
+
+    if args.size == 2
+      method, path = args
+    elsif args.first.kind_of?(Symbol)
+      method = args.first
+    else
+      path = args.first
+    end
+    pattern = Regexp.new(path.to_str.gsub("*","(.*?)"))
+
+    routes(:write) << [pattern, route] if type.nil? or type == :write
+    routes(:read)  << [pattern, route] if type.nil? or type == :read
+  end
+
+  def self.resolve_path(path, base)
+    path =~ /^\// ? path : "/#{base}/#{path}" # support relative and absolute paths
+  end
+
+private
+
+  def self.routes(type)
+    @routes ||= {}
+    @routes[type] ||= []
   end
 
   module ClassMethods
     def node_type
       @node_type ||= name.underscore
-    end
-
-    def node_host(host = nil)
-      if host
-        @node_host = host
-      else
-        @node_host ||= self == ActiveNode::Base ? ActiveNode::DEFAULT_HOST : ActiveNode::Base.node_host
-      end
-    end
-
-    def node_server(server = nil)
-      if server
-        @node_server = server
-      else
-        @node_server ||= ActiveNode.server(node_host)
-      end
     end
 
     def load_using(method = nil)
@@ -62,53 +83,28 @@ module ActiveNode
       node
     end
 
-    def query_string(opts)
-      if opts
-        raise ArgumentError, "opts must be Hash" unless opts.kind_of?(Hash)
-        "?" << opts.collect do |key, val|
-          "#{CGI.escape(key.to_s)}=#{CGI.escape(val.to_s)}"
-        end.join('&')
-      end
+    def read_graph(path, opts = nil)
+      path   = ActiveNode.resolve_path(path, node_type)
+      server = ActiveNode.server(:read, path)
+      server.read(path, opts)
     end
 
-    METHODS.each do |method|
-      put_or_post = [:put, :post].include?(method)
-      define_method(method.to_s.upcase) do |resource, *args|
-        resource = "/#{node_type}/#{resource}" unless resource =~ /^\// # support relative and absolute paths
-
-        begin
-          if put_or_post
-            raise ArgumentError, "wrong number of arguments (#{args.size} for 2)" if args.size > 2
-            data = args.first.to_json
-            resource << query_string(args.last) if args.size == 2
-            response = node_server.send(method, resource, data, 'Content-type' => 'application/json')
-          else
-            raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" if args.size > 1
-            resource << query_string(args.last) if args.size == 1
-            response = node_server.send(method, resource)
-          end
-
-          if response.code =~ /\A2\d{2}\z/
-            body = response.body
-            return nil if body.empty? or body == 'null'
-            return JSON.load(body)
-          end
-          raise ActiveNode::Error, "#{method} to http://#{node_host}#{resource} failed with HTTP #{response.code}"
-        rescue Errno::ECONNREFUSED => e
-          raise ActiveNode::ConnectionError, "connection refused on #{method} to http://#{node_host}#{resource}"
-        rescue TimeoutError => e
-          raise ActiveNode::ConnectionError, "timeout on #{method} to http://#{node_host}#{resource}"
-        end
-      end
+    def write_graph(path, data, opts = nil)
+      path   = ActiveNode.resolve_path(path, node_type)
+      server = ActiveNode.server(:write, path)
+      server.write(path, data, opts)
     end
   end
 
   module InstanceMethods
-    METHODS.each do |method|
-      define_method(method.to_s.upcase) do |resource, *args|
-        resource = "/#{node_id}/#{resource}" unless resource =~ /^\// # support relative and absolute paths
-        self.class.send(method.to_s.upcase, resource, *args)
-      end
+    def read_graph(path, opts = nil)
+      path = ActiveNode.resolve_path(path, node_id)
+      self.class.read_graph(path, opts)
+    end
+
+    def write_graph(path, data, opts = nil)
+      path = ActiveNode.resolve_path(path, node_id)
+      self.class.write_graph(path, data, opts)
     end
 
     def layer_data
@@ -139,6 +135,7 @@ end
 
 $:.unshift(File.dirname(__FILE__))
 require 'active_node/base'
+require 'active_node/server'
 
 unless String.instance_methods.include?('underscore')
   class String
@@ -157,8 +154,6 @@ class Class
   def active_node(opts = {})
     extend  ActiveNode::ClassMethods
     include ActiveNode::InstanceMethods
-    node_host   opts[:host]
-    node_server opts[:node_server]
     load_using  opts[:load_using]
   end
 end
