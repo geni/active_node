@@ -53,8 +53,12 @@ private
   end
 
   module ClassMethods
-    def node_type
-      @node_type ||= name.underscore
+    def node_type(type = nil)
+      if type
+        @node_type = type
+      else
+        @node_type ||= name.underscore
+      end
     end
 
     def load_using(method = nil)
@@ -154,6 +158,7 @@ class Class
   def active_node(opts = {})
     extend  ActiveNode::ClassMethods
     include ActiveNode::InstanceMethods
-    load_using  opts[:load_using]
+    load_using opts[:load_using]
+    node_type  opts[:node_type]
   end
 end
