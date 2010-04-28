@@ -32,11 +32,11 @@ module ActiveNode
         return nil if body.empty? or body == 'null'
         return JSON.load(body)
       end
-      raise ActiveNode::Error, "#{method} to http://#{node_host}#{resource} failed with HTTP #{response.code}"
+      raise ActiveNode::Error, "#{method} to http://#{host}#{args.first} failed with HTTP #{response.code}"
     rescue Errno::ECONNREFUSED => e
-      raise ActiveNode::ConnectionError, "connection refused on #{method} to http://#{node_host}#{resource}"
+      raise ActiveNode::ConnectionError, "connection refused on #{method} to http://#{host}#{args.first}"
     rescue TimeoutError => e
-      raise ActiveNode::ConnectionError, "timeout on #{method} to http://#{node_host}#{resource}"
+      raise ActiveNode::ConnectionError, "timeout on #{method} to http://#{host}#{args.first}"
     end
 
     def query_string(opts)
