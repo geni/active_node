@@ -7,7 +7,7 @@ module ActiveNode
     host = nil
     routes(type).each do |pattern, route|
       match = pattern.match(path)
-      host  = route.call(match.values_at(1..-1)) if match
+      host  = route.kind_of?(Proc) ? route.call(match.values_at(1..-1)) : route if match
       break if host
     end
 
@@ -35,7 +35,8 @@ module ActiveNode
     else
       path = args.first
     end
-    pattern = Regexp.new(path.to_str.gsub("*","(.*?)"))
+    path ||= '.*'
+    pattern = Regexp.new(path.to_s.gsub("*","(.*?)"))
 
     routes(:write) << [pattern, route] if type.nil? or type == :write
     routes(:read)  << [pattern, route] if type.nil? or type == :read
