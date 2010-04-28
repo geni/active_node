@@ -29,9 +29,9 @@ module ActiveNode
     end
 
     if args.size == 2
-      method, path = args
+      type, path = args
     elsif args.first.kind_of?(Symbol)
-      method = args.first
+      type = args.first
     else
       path = args.first
     end
