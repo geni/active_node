@@ -41,6 +41,18 @@ module ActiveNode
     routes(:read)  << [pattern, route] if type.nil? or type == :read
   end
 
+  def self.read_graph(path, opts = nil)
+    path   = "/#{path}" unless path[0] == '/'
+    server = ActiveNode.server(:read, path)
+    server.read(path, opts)
+  end
+
+  def self.write_graph(path, data, opts = nil)
+    path   = "/#{path}" unless path[0] == '/'
+    server = ActiveNode.server(:write, path)
+    server.write(path, data, opts)
+  end
+
   def self.resolve_path(path, base)
     path =~ /^\// ? path : "/#{base}/#{path}" # support relative and absolute paths
   end
@@ -65,7 +77,8 @@ private
       if method
         @load_using = method
       elsif @load_using.nil?
-        @load_using = defined?(ActiveRecord::Base) and kind_of?(ActiveRecord::Base) ? :find_by_node_id : false
+        isa_ar = defined?(ActiveRecord::Base) and ancestors.include?(ActiveRecord::Base)
+        @load_using = isa_ar ? :find_by_node_id : false
       end
       @load_using
     end
@@ -88,15 +101,13 @@ private
     end
 
     def read_graph(path, opts = nil)
-      path   = ActiveNode.resolve_path(path, node_type)
-      server = ActiveNode.server(:read, path)
-      server.read(path, opts)
+      path = ActiveNode.resolve_path(path, node_type)
+      ActiveNode.read_graph(path, opts)
     end
 
     def write_graph(path, data, opts = nil)
-      path   = ActiveNode.resolve_path(path, node_type)
-      server = ActiveNode.server(:write, path)
-      server.write(path, data, opts)
+      path = ActiveNode.resolve_path(path, node_type)
+      ActiveNode.write_graph(path, opts)
     end
   end
 
