@@ -43,22 +43,26 @@ module ActiveNode
   end
 
   def self.read_graph(path, opts = nil)
-    path   = "/#{path}" unless path[0] == '/'
+    path   = "/#{path}" unless absolute_path?(path)
     server = ActiveNode.server(:read, path)
     server.read(path, opts)
   end
 
   def self.write_graph(path, data, opts = nil)
-    path   = "/#{path}" unless path[0] == '/'
+    path   = "/#{path}" unless absolute_path?(path)
     server = ActiveNode.server(:write, path)
     server.write(path, data, opts)
   end
 
   def self.resolve_path(path, base)
-    path =~ /^\// ? path : "/#{base}/#{path}" # support relative and absolute paths
+    absolute_path?(path) ? path : "/#{base}/#{path}" # support relative and absolute paths
   end
 
 private
+
+  def self.absolute_path?(path)
+    path.chars.first == '/'
+  end
 
   def self.routes(type)
     @routes ||= {}
