@@ -112,7 +112,7 @@ private
 
     def write_graph(path, data, opts = nil)
       path = ActiveNode.resolve_path(path, node_type)
-      ActiveNode.write_graph(path, opts)
+      ActiveNode.write_graph(path, data, opts)
     end
   end
 
