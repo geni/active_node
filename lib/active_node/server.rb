@@ -32,7 +32,7 @@ module ActiveNode
         return nil if body.empty? or body == 'null'
         return JSON.load(body)
       end
-      raise ActiveNode::Error, "#{method} to http://#{host}#{args.first} failed with HTTP #{response.code}: #{body}"
+      raise ActiveNode::Error, "#{method} to http://#{host}#{args.first} failed with HTTP #{response.code}:\n#{response.body}"
     rescue Errno::ECONNREFUSED => e
       raise ActiveNode::ConnectionError, "connection refused on #{method} to http://#{host}#{args.first}"
     rescue TimeoutError => e
