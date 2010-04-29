@@ -1,6 +1,7 @@
 require 'net/http'
 require 'cgi'
 require 'json'
+require 'pp'
 
 module ActiveNode
   class Server
@@ -31,6 +32,8 @@ module ActiveNode
         body = response.body
         return nil if body.empty? or body == 'null'
         return JSON.load(body)
+      elsif response.code =~ /\A4\d{2}\z/
+        pp JSON.load(body)
       end
       raise ActiveNode::Error, "#{method} to http://#{host}#{args.first} failed with HTTP #{response.code}"
     rescue Errno::ECONNREFUSED => e
