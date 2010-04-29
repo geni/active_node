@@ -28,15 +28,20 @@ module ActiveNode
     def http(method, *args)
       response = @http.send(method, *args)
       if response.code =~ /\A2\d{2}\z/
-        body = response.body
-        return nil if body.empty? or body == 'null'
-        return JSON.load(body)
+        return parse_body(response.body)
+      elsif response.code =~ /\A4\d{2}\z/
+        error = parse_body(response.body).pretty_inspect
       end
-      raise ActiveNode::Error, "#{method} to http://#{host}#{args.first} failed with HTTP #{response.code}:\n#{response.body}"
+      raise ActiveNode::Error, "#{method} to http://#{host}#{args.first} failed with HTTP #{response.code}:\n#{error}"
     rescue Errno::ECONNREFUSED => e
       raise ActiveNode::ConnectionError, "connection refused on #{method} to http://#{host}#{args.first}"
     rescue TimeoutError => e
       raise ActiveNode::ConnectionError, "timeout on #{method} to http://#{host}#{args.first}"
+    end
+
+    def parse_body(body)
+      return nil if body.empty? or body == 'null'
+      JSON.load(body)
     end
 
     def query_string(opts)
