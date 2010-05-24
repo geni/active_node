@@ -32,7 +32,7 @@ module ActiveNode
       elsif response.code =~ /\A4\d{2}\z/
         error = parse_body(response.body).pretty_inspect
       end
-      raise ActiveNode::Error, "#{method} to http://#{host}#{args.first} failed with HTTP #{response.code}:\n#{error}"
+      raise ActiveNode::Error, "#{method} to http://#{host}#{args.first} failed with HTTP #{response.code}\n#{error}"
     rescue Errno::ECONNREFUSED => e
       raise ActiveNode::ConnectionError, "connection refused on #{method} to http://#{host}#{args.first}"
     rescue TimeoutError => e
