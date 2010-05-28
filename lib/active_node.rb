@@ -61,7 +61,7 @@ module ActiveNode
 private
 
   def self.absolute_path?(path)
-    path.chars.first == '/'
+    path.mb_chars.first == '/'
   end
 
   def self.routes(type)
