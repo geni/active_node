@@ -9,7 +9,7 @@ module ActiveNode
 
     def initialize(host)
       @host = host || DEFAULT_HOST
-      @http = Net::HTTP.new(*@host.split(':'))
+      @http = Net::HTTP.start(*@host.split(':'))
     end
 
     def read(path, opts = nil)
