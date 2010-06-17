@@ -17,7 +17,7 @@ module ActiveNode
     end
 
     def write(path, data, params = nil)
-      http(:post, path,
+      http(:put, path,
         :body    => data.to_json,
         :params  => params,
         :headers => {'Content-type' => 'application/json'}
