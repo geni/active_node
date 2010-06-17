@@ -20,7 +20,7 @@ module ActiveNode
         :method  => :post,
         :body    => data.to_json,
         :params  => params,
-        :headers => 'Content-type' => 'application/json'
+        :headers => {'Content-type' => 'application/json'}
       )
     end
 
