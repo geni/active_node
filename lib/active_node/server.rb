@@ -5,6 +5,7 @@ require 'json'
 module ActiveNode
   class Server
     DEFAULT_HOST = "localhost:9229"
+    TIMEOUT = 5 # seconds
     attr_reader :host
 
     def initialize(host)
@@ -12,12 +13,11 @@ module ActiveNode
     end
 
     def read(path, params = nil)
-      http(path, :params => params)
+      http(:get, path, :params => params)
     end
 
     def write(path, data, params = nil)
-      http(path,
-        :method  => :post,
+      http(:post, path,
         :body    => data.to_json,
         :params  => params,
         :headers => {'Content-type' => 'application/json'}
@@ -26,19 +26,19 @@ module ActiveNode
 
   private
 
-    def http(path, opts = {})
-      response = Typhoeus::Request.run("#{host}#{path}", opts.merge(:timeout => 5000))
+    def http(method, path, opts = {})
+      response = Typhoeus::Request.run("#{host}#{path}", opts.merge(:timeout => TIMEOUT * 1000, :method => method))
       if response.success?
         return parse_body(response.body)
       elsif response.code == 0
-        if response.time > 0
-          raise ActiveNode::ConnectionError, "timeout on #{method} to http://#{host}#{path}"
+        if response.time.round == TIMEOUT
+          raise ActiveNode::ConnectionError, "timeout on #{method} to #{response.effective_url}"
         else
-          raise ActiveNode::ConnectionError, "connection refused on #{method} to http://#{host}#{path}"
+          raise ActiveNode::ConnectionError, "connection refused on #{method} to #{response.effective_url}"
         end
       else
         error = parse_body(response.body).pretty_inspect
-        raise ActiveNode::Error, "#{method} to http://#{host}#{args.first} failed with HTTP #{response.code}\n#{error}"
+        raise ActiveNode::Error, "#{method} to #{response.effective_url} failed with HTTP #{response.code}\n#{error}"
       end
     end
 
