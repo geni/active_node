@@ -31,7 +31,7 @@ module ActiveNode
       if response.success?
         return parse_body(response.body)
       elsif response.code == 0
-        if time > 0
+        if response.time > 0
           raise ActiveNode::ConnectionError, "timeout on #{method} to http://#{host}#{path}"
         else
           raise ActiveNode::ConnectionError, "connection refused on #{method} to http://#{host}#{path}"
