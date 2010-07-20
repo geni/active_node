@@ -37,8 +37,9 @@ module ActiveNode
           raise ActiveNode::ConnectionError, "connection refused on #{method} to #{response.effective_url}"
         end
       else
-        error = parse_body(response.body).pretty_inspect
-        raise ActiveNode::Error, "#{method} to #{response.effective_url} failed with HTTP #{response.code}\n#{error}"
+        e = ActiveNode::Error.new("#{method} to #{response.effective_url} failed with HTTP #{response.code}")
+        e.cause = parse_body(response.body)
+        raise e
       end
     end
 

@@ -1,5 +1,7 @@
 module ActiveNode
-  class Error   < StandardError; end
+  class Error   < StandardError
+    attr_accessor :cause
+  end
   class ConnectionError < Error; end
   class TimeoutError    < Error; end
 
