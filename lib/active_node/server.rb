@@ -18,7 +18,7 @@ module ActiveNode
 
     def write(path, data, params = nil)
       http(:put, path,
-        :body    => (data || {}).to_json,
+        :data    => data || {},
         :params  => params,
         :headers => {'Content-type' => 'application/json'}
       )
@@ -27,20 +27,23 @@ module ActiveNode
   private
 
     def http(method, path, opts = {})
+      data = opts.delete(:data)
+      opts[:body] = data.to_json if data
+
       response = Typhoeus::Request.run("#{host}#{path}", opts.merge(:timeout => TIMEOUT * 1000, :method => method))
-      if response.success?
-        return parse_body(response.body)
-      elsif response.code == 0
-        if response.time.round == TIMEOUT
-          raise ActiveNode::ConnectionError, "timeout on #{method} to #{response.effective_url}"
-        else
-          raise ActiveNode::ConnectionError, "connection refused on #{method} to #{response.effective_url}"
-        end
+      return parse_body(response.body) if response.success?
+
+      if response.code == 0
+        problem = response.time.round == TIMEOUT ? "timeout" : "connection refused"
+        e = ActiveNode::ConnectionError.new("#{problem} on #{method} to #{response.effective_url}")
+        e.cause = {:request_timeout => TIMEOUT, :response_time => response.time.round}
       else
         e = ActiveNode::Error.new("#{method} to #{response.effective_url} failed with HTTP #{response.code}")
         e.cause = parse_body(response.body)
-        raise e
       end
+      e.cause[:request_data]   = data
+      e.cause[:request_params] = opts[:params]
+      raise e
     end
 
     def parse_body(body)
