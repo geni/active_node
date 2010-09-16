@@ -1,4 +1,3 @@
-require 'mocha'
 module ActiveNode
   class TestServer
     attr_reader :requests
