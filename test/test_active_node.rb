@@ -1,19 +1,19 @@
 require File.dirname(__FILE__) + '/test_helper'
 
 class ActiveNodeTest < Test::Unit::TestCase
+  include ActiveNode::TestHelper
+
   context "An ActiveNode class" do
     should "send attributes as JSON body on write" do
-      server = TestModel.mock_server
-
-      TestModel.write_graph('add', { :name => 'Harley' })
-
-      assert_equal 1, server.requests.size
-      req = server.requests.shift
-
-      assert_equal  :post,                        req[:method]
-      assert_equal  '/test_model/add',            req[:resource]
-      assert_equal( {'name' => 'Harley'}.to_json, req[:data])
-      assert_equal  'application/json',           req[:headers]['Content-type']
+      mock_active_node({ :name => 'Harley' }) do |server|
+        assert_equal 1, server.requests.size
+        req = server.requests.shift
+        
+        assert_equal  :post,                        req[:method]
+        assert_equal  '/test_model/add',            req[:resource]
+        assert_equal( {'name' => 'Harley'}.to_json, req[:data])
+        assert_equal  'application/json',           req[:headers]['Content-type']
+      end
     end
   end
 
