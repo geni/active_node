@@ -1,5 +1,5 @@
 module ActiveNode
-  class Error   < StandardError
+  class Error < StandardError
     attr_accessor :cause
   end
   class ConnectionError < Error; end
@@ -18,7 +18,7 @@ module ActiveNode
   end
 
   # inspired by Sinatra (sinatrarb.com)
-  def self.route(*args, &block)
+  def self.route(*args, &block) # [type], [pattern], host | &dynamic_route
     if block_given?
       # dynamic route
       raise ArgumentError, "wrong number of arguments (#{args.size} for 2)" if args.size > 2

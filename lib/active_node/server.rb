@@ -39,7 +39,7 @@ module ActiveNode
         e.cause = {:request_timeout => TIMEOUT, :response_time => response.time.round}
       else
         e = ActiveNode::Error.new("#{method} to #{response.effective_url} failed with HTTP #{response.code}")
-        e.cause = parse_body(response.body)
+        e.cause = parse_body(response.body) || {}
       end
       e.cause[:request_data]   = data
       e.cause[:request_params] = opts[:params]
