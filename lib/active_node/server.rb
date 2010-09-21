@@ -36,7 +36,9 @@ module ActiveNode
       if response.code == 0
         problem = response.time.round == TIMEOUT ? "timeout" : "connection refused"
         e = ActiveNode::ConnectionError.new("#{problem} on #{method} to #{response.effective_url}")
-        e.cause = {:request_timeout => TIMEOUT, :response_time => response.time.round}
+        e.cause = {:request_timeout => TIMEOUT, 
+                   :response_time_round => response.time.round,
+                   :request => response.request}
       else
         e = ActiveNode::Error.new("#{method} to #{response.effective_url} failed with HTTP #{response.code}")
         e.cause = parse_body(response.body) || {}
