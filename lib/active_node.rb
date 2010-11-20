@@ -59,7 +59,7 @@ module ActiveNode
   def self.resolve_path(path, base)
     absolute_path?(path) ? path : "/#{base}/#{path}" # support relative and absolute paths
   end
-
+  
 private
 
   def self.absolute_path?(path)
