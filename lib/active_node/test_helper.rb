@@ -34,5 +34,13 @@ module ActiveNode
       ActiveNode.stubs(:server).returns(server)
       server
     end
+
+    def mock_active_node_error(e)
+      server = stub do 
+        stubs(:write).raises(e)
+      end
+      ActiveNode.stubs(:server).returns(server)
+      server
+    end
   end
 end
