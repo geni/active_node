@@ -14,8 +14,10 @@ module ActiveNode
 
     def read(path, params = nil)
       if ActiveNode.respond_to?(:latest_revision)
-        params ||= {}
-        params["revision"] = ActiveNode.latest_revision
+        if (revision = ActiveNode.latest_revision)
+          params ||= {}
+          params["revision"] = revision
+        end
       end
       http(:get, path, :params => params)
     end
@@ -37,7 +39,7 @@ module ActiveNode
       response = Typhoeus::Request.run("#{host}#{path}", opts.merge(:timeout => TIMEOUT * 1000, :method => method))
       if response.success?
         results = parse_body(response.body)
-        ActiveNode.latest_revision(results["revision"]) if ActiveNode.respond_to?(:latest_revision)
+        ActiveNode.latest_revision(results["revision"]) if results and ActiveNode.respond_to?(:latest_revision)
         return results
       end
 
