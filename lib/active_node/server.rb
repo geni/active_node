@@ -5,7 +5,7 @@ require 'json'
 module ActiveNode
   class Server
     DEFAULT_HOST = "localhost:9229"
-    TIMEOUT = 5 # seconds
+    TIMEOUT = 30 # seconds
     attr_reader :host
 
     def initialize(host)
