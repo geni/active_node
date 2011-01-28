@@ -41,6 +41,7 @@ module ActiveNode
       headers.merge!(ActiveNode.headers) if ActiveNode.respond_to?(:headers)
 
       response = Typhoeus::Request.run("#{host}#{path}",
+        :body    => body,
         :method  => method,
         :params  => params,
         :headers => headers,
