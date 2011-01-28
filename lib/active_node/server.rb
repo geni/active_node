@@ -6,6 +6,7 @@ module ActiveNode
   class Server
     DEFAULT_HOST = "localhost:9229"
     TIMEOUT = 30 # seconds
+    RETRY_LIMIT = 5
     attr_reader :host
 
     def initialize(host)
@@ -33,10 +34,18 @@ module ActiveNode
   private
 
     def http(method, path, opts = {})
-      data = opts.delete(:data)
-      opts[:body] = data.to_json if data
+      body      = opts[:data].to_json if opts[:data]
+      params    = opts[:params]
+      retry_num = opts[:retry_num] || 0
+      headers   = (opts[:headers] || {}).merge('Retry-num' => retry_num.to_s),
+      headers.merge!(ActiveNode.headers) if ActiveNode.respond_to?(:headers)
 
-      response = Typhoeus::Request.run("#{host}#{path}", opts.merge(:timeout => TIMEOUT * 1000, :method => method))
+      response = Typhoeus::Request.run("#{host}#{path}",
+        :method  => method,
+        :params  => params,
+        :headers => headers,
+        :timeout => TIMEOUT * 1000
+      )
       if response.success?
         results = parse_body(response.body)
         ActiveNode.latest_revision(results["revision"]) if results and ActiveNode.respond_to?(:latest_revision)
@@ -44,11 +53,15 @@ module ActiveNode
       end
 
       if response.code == 0
-        problem = response.time.round == TIMEOUT ? "timeout" : "connection refused"
-        e = ActiveNode::ConnectionError.new("#{problem} on #{method} to #{response.effective_url}")
-        e.cause = {:request_timeout => TIMEOUT,
-                   :response_time_round => response.time.round,
-                   :request => response.request}
+        problem = response.time.round == TIMEOUT ? :timeout : :connection_refused
+        if problem != :timeout and retry_num < RETRY_LIMIT
+          http(method, path, opts.merge(:retry_num => retry_num + 1))
+        else
+          e = ActiveNode::ConnectionError.new("#{problem} on #{method} to #{response.effective_url}")
+          e.cause = {:request_timeout => TIMEOUT,
+                     :response_time_round => response.time.round,
+                     :request => response.request}
+        end
       else
         e = ActiveNode::Error.new("#{method} to #{response.effective_url} failed with HTTP #{response.code}")
         e.cause = parse_body(response.body) || {}
