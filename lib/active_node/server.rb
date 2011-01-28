@@ -37,7 +37,7 @@ module ActiveNode
       body      = opts[:data].to_json if opts[:data]
       params    = opts[:params]
       retry_num = opts[:retry_num] || 0
-      headers   = (opts[:headers] || {}).merge('Retry-num' => retry_num.to_s),
+      headers   = (opts[:headers] || {}).merge('Retry-num' => retry_num.to_s)
       headers.merge!(ActiveNode.headers) if ActiveNode.respond_to?(:headers)
 
       response = Typhoeus::Request.run("#{host}#{path}",
