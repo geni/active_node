@@ -67,7 +67,7 @@ module ActiveNode
         e = ActiveNode::Error.new("#{method} to #{response.effective_url} failed with HTTP #{response.code}")
         e.cause = parse_body(response.body) || {}
       end
-      e.cause[:request_data]   = data
+      e.cause[:request_data]   = opts[:data]
       e.cause[:request_params] = opts[:params]
       raise e
     end
