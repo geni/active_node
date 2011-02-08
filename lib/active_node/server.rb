@@ -16,7 +16,7 @@ module ActiveNode
     end
 
     def read(path, params = nil)
-      if ActiveNode.respond_to?(:latest_revision) and params['revision'].nil?
+      if ActiveNode.respond_to?(:latest_revision) and (params.nil? or  params['revision'].nil?)
         if (revision = ActiveNode.latest_revision)
           params ||= {}
           params["revision"] = revision
