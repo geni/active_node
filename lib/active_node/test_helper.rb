@@ -1,29 +1,19 @@
 module ActiveNode
-  class TestServer
+  class TestServer < Server
     attr_reader :requests
 
     def initialize(*mock_responses)
+      @host      = DEFAULT_HOST
       @requests  = []
       @responses = mock_responses || []
     end
 
-    def read(resource, params = nil)
-      request(resource, :get, params)
-    end
-
-    def write(resource, data, params = nil)
-      request(resource, :put, params, data)
-    end
-
   private
 
-    def request(resource, method, params, data = nil)
-      opts = {
-        :body   => data ? data.to_json : nil,
-        :params => params,
-        :method => method,
-      }
-      @requests << Typhoeus::Request.new(resource, opts)
+    def http(method, path, opts={})
+      @requests << opts.merge(:method => method,
+                              :path   => path,
+                              :body   => opts[:data] ? opts[:data].to_json : nil)
       @responses.size > 1 ? @responses.shift : @responses.first
     end
   end
@@ -32,6 +22,7 @@ module ActiveNode
     def mock_active_node(*responses)
       server = ActiveNode::TestServer.new(*responses)
       ActiveNode.stubs(:server).returns(server)
+      yield(server) if block_given?
       server
     end
 

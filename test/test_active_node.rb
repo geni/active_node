@@ -4,16 +4,27 @@ class TestModel < ActiveNode::Base; end
 
 class ActiveNodeTest < Test::Unit::TestCase
   include ActiveNode::TestHelper
-  
+
+  context "mocked graph server" do
+    should "yield" do
+      assert_raise(RuntimeError) do
+        mock_active_node do |server|
+          raise 'ok!'
+        end
+      end
+    end
+  end
+
   context "An ActiveNode class" do
     should "send attributes as JSON body on write" do
       mock_active_node({ :name => 'Harley'}) do |server|
+        TestModel.write_graph('add', 'name' => 'Harley')
         assert_equal 1, server.requests.size
         req = server.requests.shift
-        
-        assert_equal  :post,                        req[:method]
-        assert_equal  '/test_model/add',            req[:resource]
-        assert_equal( {'name' => 'Harley'}.to_json, req[:data])
+
+        assert_equal  :put,                         req[:method]
+        assert_equal  '/test_model/add',            req[:path]
+        assert_equal( {'name' => 'Harley'}.to_json, req[:body])
         assert_equal  'application/json',           req[:headers]['Content-type']
       end
     end
@@ -40,9 +51,9 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :post,                         req[:method]
-        assert_equal  '/test_model-1/update',        req[:resource]
-        assert_equal( {'name' => 'Charlie'}.to_json, req[:data])
+        assert_equal  :put,                          req[:method]
+        assert_equal  '/test_model-1/update',        req[:path]
+        assert_equal( {'name' => 'Charlie'}.to_json, req[:body])
         assert_equal  'application/json',            req[:headers]['Content-type']
       end
     end
@@ -55,32 +66,60 @@ class ActiveNodeTest < Test::Unit::TestCase
         req = server.requests.shift
 
         assert_equal  :get,             req[:method]
-        assert_equal  '/test_model-1/', req[:resource]
+        assert_equal  '/test_model-1/', req[:path]
       end
     end
     
     should "read specified attributes when called with resource" do
       mock_active_node do |server|
-        server = TestModel.mock_server
+        #server = TestModel.mock_server
         TestModel.init('test_model-1').read_graph('profile')
 
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
         assert_equal  :get,                    req[:method]
-        assert_equal  '/test_model-1/profile', req[:resource]
+        assert_equal  '/test_model-1/profile', req[:path]
       end
     end
 
     should 'pass extra params on query string' do
       mock_active_node do |server|
-        server = TestModel.mock_server
+        #server = TestModel.mock_server
         TestModel.init('test_model-1').write_graph('update', { :name => 'Bob' }, { 'test' => 'testing' })
 
         assert_equal 1, server.requests.size
         req = server.requests.shift
         
-        assert_equal  '/test_model-1/update?test=testing', req[:resource]
+        assert_equal '/test_model-1/update', req[:path]
+        assert_equal 'testing',              req[:params]['test']
+      end
+    end
+
+    should 'override latest_revision with params' do
+      mock_active_node do |server|
+        ActiveNode.stubs(:latest_revision).returns(654)
+        TestModel.init('test_model-1').read_graph('', 'revision' => 876)
+
+        assert_equal 1, server.requests.size
+        req = server.requests.shift
+
+        assert_equal  :get,             req[:method]
+        assert_equal  '/test_model-1/', req[:path]
+        assert_equal  876,              req[:params]['revision']
+      end
+    end
+
+    should 'use default path on read' do
+      mock_active_node do |server|
+        TestModel.init('test_model-7').read_graph('revision' => 876)
+
+        assert_equal 1, server.requests.size
+        req = server.requests.shift
+
+        assert_equal  :get,             req[:method]
+        assert_equal  '/test_model-7/', req[:path]
+        assert_equal  876,              req[:params]['revision']
       end
     end
   end

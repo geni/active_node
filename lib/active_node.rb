@@ -63,7 +63,7 @@ module ActiveNode
 private
 
   def self.absolute_path?(path)
-    path.mb_chars.first == '/'
+    path[0] == ?/
   end
 
   def self.routes(type)
@@ -119,7 +119,8 @@ private
   end
 
   module InstanceMethods
-    def read_graph(path, opts = nil)
+    def read_graph(path='', opts = nil)
+      (opts, path) = [path, ''] if path.kind_of?(Hash)
       path = ActiveNode.resolve_path(path, node_id)
       self.class.read_graph(path, opts)
     end
