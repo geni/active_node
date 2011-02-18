@@ -135,8 +135,8 @@ private
   end
 
   module InstanceMethods
-    def read_graph(path = 'get', opts = {})
-      (opts, path) = [path, 'get'] if path.kind_of?(Hash)
+    def read_graph(path = 'node', opts = {})
+      (opts, path) = [path, 'node'] if path.kind_of?(Hash)
       path = ActiveNode.resolve_path(path, node_id)
       self.class.read_graph(path, opts)
     end

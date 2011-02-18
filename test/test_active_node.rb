@@ -116,7 +116,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         req = server.requests.shift
 
         assert_equal  :post,                      req[:method]
-        assert_equal  '/test_model-7/get',        req[:path]
+        assert_equal  '/test_model-7/node',       req[:path]
         assert_equal( {:revision => 876}.to_json, req[:body] )
       end
     end
@@ -133,8 +133,8 @@ class ActiveNodeTest < Test::Unit::TestCase
 
         assert_equal :post,        req[:method]
         assert_equal '/bulk-read', req[:path]
-        assert_equal [{:path => '/test_model-5/get', :params => {}, :id => 0},
-                      {:path => '/test_model-7/get', :params => {}, :id => 1}].to_json,
+        assert_equal [{:path => '/test_model-5/node', :params => {}, :id => 0},
+                      {:path => '/test_model-7/node', :params => {}, :id => 1}].to_json,
                      req[:body]
       end
     end
