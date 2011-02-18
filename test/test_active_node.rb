@@ -120,5 +120,23 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal( {:revision => 876}.to_json, req[:body] )
       end
     end
+
+    should 'bulk read' do
+      mock_active_node([]) do |server|
+        ActiveNode.bulk_read do
+          TestModel.init('test_model-5').read_graph
+          TestModel.init('test_model-7').read_graph
+        end
+
+        assert_equal 1, server.requests.size
+        req = server.requests.shift
+
+        assert_equal :post,        req[:method]
+        assert_equal '/bulk-read', req[:path]
+        assert_equal [{:path => '/test_model-5/get', :params => {}, :id => 0},
+                      {:path => '/test_model-7/get', :params => {}, :id => 1}].to_json,
+                     req[:body]
+      end
+    end
   end
 end

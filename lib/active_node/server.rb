@@ -51,7 +51,7 @@ module ActiveNode
     def self.bulk_read(opts = {})
       results = []
       @@bulk_requests.each do |server, requests|
-        server.bulk_read(requests, opts)['results'].zip(requests) do |result, request|
+        server.bulk_read(requests, opts).zip(requests) do |result, request|
           results[request[:id]] = result
         end
       end
@@ -92,7 +92,7 @@ module ActiveNode
       )
       if response.success?
         results = parse_body(response.body)
-        ActiveNode.latest_revision(results["revision"]) if results and ActiveNode.respond_to?(:latest_revision)
+        ActiveNode.latest_revision(results["revision"]) if results.kind_of?(Hash) and ActiveNode.respond_to?(:latest_revision)
         return results
       end
 
