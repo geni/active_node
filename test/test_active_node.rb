@@ -25,11 +25,10 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal  :put,                         req[:method]
         assert_equal  '/test_model/add',            req[:path]
         assert_equal( {'name' => 'Harley'}.to_json, req[:body])
-        assert_equal  'application/json',           req[:headers]['Content-type']
       end
     end
   end
-  
+
   context "An ActiveNode model" do
     should "set @node_id in init" do
       t = TestModel.init('model-43')
@@ -38,7 +37,7 @@ class ActiveNodeTest < Test::Unit::TestCase
 
     should "set cached layer_data in init" do
       t = TestModel.init( 'test_model' => {:name => 'Charlie', 'occupation' => 'chocolate maker'} )
-      
+
       assert_equal [:test_model],     t.layer_data.keys
       assert_equal 'Charlie',         t.layer_data[:test_model][:name]
       assert_equal 'chocolate maker', t.layer_data[:test_model]['occupation']
@@ -54,7 +53,6 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal  :put,                          req[:method]
         assert_equal  '/test_model-1/update',        req[:path]
         assert_equal( {'name' => 'Charlie'}.to_json, req[:body])
-        assert_equal  'application/json',            req[:headers]['Content-type']
       end
     end
 
@@ -65,11 +63,11 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :get,             req[:method]
+        assert_equal  :post,            req[:method]
         assert_equal  '/test_model-1/', req[:path]
       end
     end
-    
+
     should "read specified attributes when called with resource" do
       mock_active_node do |server|
         #server = TestModel.mock_server
@@ -78,7 +76,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :get,                    req[:method]
+        assert_equal  :post,                   req[:method]
         assert_equal  '/test_model-1/profile', req[:path]
       end
     end
@@ -90,7 +88,7 @@ class ActiveNodeTest < Test::Unit::TestCase
 
         assert_equal 1, server.requests.size
         req = server.requests.shift
-        
+
         assert_equal '/test_model-1/update', req[:path]
         assert_equal 'testing',              req[:params]['test']
       end
@@ -104,9 +102,9 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :get,             req[:method]
-        assert_equal  '/test_model-1/', req[:path]
-        assert_equal  876,              req[:params]['revision']
+        assert_equal  :post,                      req[:method]
+        assert_equal  '/test_model-1/',           req[:path]
+        assert_equal( {:revision => 876}.to_json, req[:body] )
       end
     end
 
@@ -117,9 +115,9 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :get,             req[:method]
-        assert_equal  '/test_model-7/', req[:path]
-        assert_equal  876,              req[:params]['revision']
+        assert_equal  :post,                      req[:method]
+        assert_equal  '/test_model-7/get',        req[:path]
+        assert_equal( {:revision => 876}.to_json, req[:body] )
       end
     end
   end

@@ -15,35 +15,62 @@ module ActiveNode
       @host = host || DEFAULT_HOST
     end
 
-    def read(path, params = nil)
-      if ActiveNode.respond_to?(:latest_revision) and (params.nil? or  params['revision'].nil?)
-        if (revision = ActiveNode.latest_revision)
-          params ||= {}
-          params["revision"] = revision
-        end
-      end
-      http(:get, path, :params => params)
+    def read(path, opts = {})
+      http(:post, path, :data => revision(opts))
     end
 
-    def write(path, data, params = nil)
-      params ||= {}
-      params[:request_time] ||= time_usec
+    def write(path, data, opts = {})
+      opts[:request_time] ||= time_usec
+      http(:put, path, :data => data || {}, :params => opts)
 
-      http(:put, path,
-        :data    => data || {},
-        :params  => params,
-        :headers => {'Content-type' => 'application/json'}
-      )
     rescue ActiveNode::ConnectionError => e
-      params[:retry] ||= 0
-      raise e unless params[:retry] < RETRY_LIMIT
+      opts[:retry] ||= 0
+      raise e unless opts[:retry] < RETRY_LIMIT
 
-      params[:retry] += 1
+      opts[:retry] += 1
       sleep(rand(RETRY_WAIT.last - RETRY_WAIT.first + 1) + RETRY_WAIT.first)
       retry
     end
 
+    def self.clear_bulk_queue!
+      @@bulk_count    = 0
+      @@bulk_requests = {}
+    end
+    clear_bulk_queue!
+
+    def enqueue_read(path, opts = {})
+      prefix  = host.split('/', 2)[1]
+      path    = "/#{prefix}#{path}" if prefix
+      request = {:path => path, :params => opts, :id => @@bulk_count}
+
+      (@@bulk_requests[self] ||= []) << request
+      @@bulk_count += 1
+      request
+    end
+
+    def self.bulk_read(opts = {})
+      results = []
+      @@bulk_requests.each do |server, requests|
+        server.bulk_read(requests, opts)['results'].zip(requests) do |result, request|
+          results[request[:id]] = result
+        end
+      end
+      clear_bulk_queue!
+      results
+    end
+
+    def bulk_read(requests, opts = {})
+      http(:post, "/bulk-read", :data => requests, :params => revision(opts))
+    end
+
   private
+
+    def revision(opts)
+      if ActiveNode.respond_to?(:latest_revision) and opts['revision'].nil?
+        opts["revision"] = revision if (revision = ActiveNode.latest_revision)
+      end
+      opts
+    end
 
     def time_usec
       t = Time.now
@@ -53,7 +80,7 @@ module ActiveNode
     def http(method, path, opts = {})
       body    = opts[:data].to_json if opts[:data]
       params  = opts[:params]
-      headers = opts[:headers] || {}
+      headers = {'Content-type' => 'application/json'}
       headers = headers.merge(ActiveNode.headers) if ActiveNode.respond_to?(:headers)
 
       response = Typhoeus::Request.run("#{host}#{path}",

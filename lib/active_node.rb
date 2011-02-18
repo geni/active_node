@@ -44,22 +44,38 @@ module ActiveNode
     routes(:read)  << [pattern, route] if type.nil? or type == :read
   end
 
-  def self.read_graph(path, opts = nil)
+  def self.read_graph(path, opts = {})
     path   = "/#{path}" unless absolute_path?(path)
     server = ActiveNode.server(:read, path)
-    server.read(path, opts)
+
+    if @bulk_read
+      server.enqueue_read(path, opts)
+    else
+      server.read(path, opts)
+    end
   end
 
-  def self.write_graph(path, data, opts = nil)
+  def self.write_graph(path, data, opts = {})
+    raise 'cannot write inside a bulk_read block' if @bulk_read
+
     path   = "/#{path}" unless absolute_path?(path)
     server = ActiveNode.server(:write, path)
     server.write(path, data, opts)
   end
 
+  def self.bulk_read(opts = {})
+    raise 'cannot nest calls to bulk_read' if @bulk_read
+    @bulk_read = true
+    yield
+    ActiveNode::Server.bulk_read(opts)
+  ensure
+    @bulk_read = nil
+  end
+
   def self.resolve_path(path, base)
     absolute_path?(path) ? path : "/#{base}/#{path}" # support relative and absolute paths
   end
-  
+
 private
 
   def self.absolute_path?(path)
@@ -107,25 +123,25 @@ private
       node
     end
 
-    def read_graph(path, opts = nil)
+    def read_graph(path, opts = {})
       path = ActiveNode.resolve_path(path, node_type)
       ActiveNode.read_graph(path, opts)
     end
 
-    def write_graph(path, data, opts = nil)
+    def write_graph(path, data, opts = {})
       path = ActiveNode.resolve_path(path, node_type)
       ActiveNode.write_graph(path, data, opts)
     end
   end
 
   module InstanceMethods
-    def read_graph(path='get', opts = nil)
+    def read_graph(path = 'get', opts = {})
       (opts, path) = [path, 'get'] if path.kind_of?(Hash)
       path = ActiveNode.resolve_path(path, node_id)
       self.class.read_graph(path, opts)
     end
 
-    def write_graph(path, data, opts = nil)
+    def write_graph(path, data, opts = {})
       path = ActiveNode.resolve_path(path, node_id)
       self.class.write_graph(path, data, opts)
     end
