@@ -44,6 +44,14 @@ module ActiveNode
     routes(:read)  << [pattern, route] if type.nil? or type == :read
   end
 
+  def self.with_routes(routes = {})
+    old_routes = @routes
+    @routes = routes
+    yield
+  ensure
+    @routes = old_routes
+  end
+
   def self.read_graph(path, opts = {})
     path   = "/#{path}" unless absolute_path?(path)
     server = ActiveNode.server(:read, path)
