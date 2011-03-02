@@ -94,6 +94,7 @@ module ActiveNode
       )
       if response.success?
         results = parse_body(response.body)
+        ActiveNode.log_request(method, path, opts, response) if ActiveNode.respond_to?(:log_request)
         ActiveNode.latest_revision(results["revision"]) if results.kind_of?(Hash) and ActiveNode.respond_to?(:latest_revision)
         return results
       end
