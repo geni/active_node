@@ -63,6 +63,25 @@ module ActiveNode
       http(:post, "/bulk-read", :data => requests, :params => revision(opts))
     end
 
+    def self.timeout
+      @timeout || TIMEOUT
+    end
+
+    def timeout
+      self.class.timeout
+    end
+
+    def self.timeout=(timeout)
+      @timeout = timeout
+    end
+
+    def self.with_timeout(timeout)
+      old, @timeout = @timeout, timeout
+      yield
+    ensure
+      @timeout = old
+    end
+
   private
 
     def revision(opts)
@@ -90,7 +109,7 @@ module ActiveNode
         :method  => method,
         :params  => params,
         :headers => headers,
-        :timeout => TIMEOUT * 1000
+        :timeout => timeout * 1000
       )
       if response.success?
         results = parse_body(response.body)
@@ -100,9 +119,9 @@ module ActiveNode
       end
 
       if response.code == 0
-        problem = response.time.round == TIMEOUT ? :timeout : :connection_refused
+        problem = response.time.round == timeout ? :timeout : :connection_refused
         e = ActiveNode::ConnectionError.new("#{problem} on #{method} to #{response.effective_url}")
-        e.cause = {:request_timeout => TIMEOUT,
+        e.cause = {:request_timeout => timeout,
                    :response_time_round => response.time.round,
                    :request => response.request}
       else
