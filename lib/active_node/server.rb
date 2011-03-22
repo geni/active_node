@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'typhoeus'
+require 'curb'
 require 'json'
 
 module ActiveNode
@@ -99,38 +99,47 @@ module ActiveNode
     end
 
     def http(method, path, opts = {})
+      url     = "#{host}#{path}#{query_string(opts[:params])}"
       body    = opts[:data].to_json if opts[:data]
-      params  = opts[:params]
       headers = {'Content-type' => 'application/json'}
       headers = headers.merge(ActiveNode.headers) if ActiveNode.respond_to?(:headers)
+      body    = opts[:data] ? [opts[:data].to_json] : []
+      error   = nil
 
-      response = Typhoeus::Request.run("#{host}#{path}",
-        :body    => body,
-        :method  => method,
-        :params  => params,
-        :headers => headers,
-        :timeout => timeout * 1000
-      )
-      if response.success?
-        results = parse_body(response.body)
-        ActiveNode.log_request(method, path, opts, response) if ActiveNode.respond_to?(:log_request)
-        ActiveNode.latest_revision(results["revision"]) if results.kind_of?(Hash) and ActiveNode.respond_to?(:latest_revision)
-        return results
+      curl = Curl::Easy.new(url) do |c|
+        c.headers = headers
+        c.timeout = timeout * 1000
       end
 
-      if response.code == 0
-        problem = response.time.round == timeout ? :timeout : :connection_refused
-        e = ActiveNode::ConnectionError.new("#{problem} on #{method} to #{response.effective_url}")
-        e.cause = {:request_timeout => timeout,
-                   :response_time_round => response.time.round,
-                   :request => response.request}
-      else
-        e = ActiveNode::Error.new("#{method} to #{response.effective_url} failed with HTTP #{response.code}")
-        e.cause = parse_body(response.body) || {}
+      begin
+        curl.send("http_#{method}", *body)
+        if curl.response_code.between?(200, 299)
+          results = parse_body(curl.body_str)
+          ActiveNode.log_request(method, path, opts, curl.total_time) if ActiveNode.respond_to?(:log_request)
+          ActiveNode.latest_revision(results["revision"]) if results.kind_of?(Hash) and ActiveNode.respond_to?(:latest_revision)
+          return results
+        else
+          error = ActiveNode::Error.new("#{method} to #{url} failed with HTTP #{e.response_code}")
+          error.cause = parse_body(curl.body_str) || {}
+        end
+      rescue Curl::Err::CouldntReadError, Curl::Err::ConnectionFailedError => e
+        error = ActiveNode::ConnectionError.new("#{e.class} on #{method} to #{url}: #{e.message}")
+      rescue Curl::Err::TimeoutError => e
+        e = ActiveNode::TimeoutError.new("#{e.class} on #{method} to #{url}: #{e.message}")
+        e.cause = {:timeout => timeout}
       end
-      e.cause[:request_data]   = opts[:data]
-      e.cause[:request_params] = opts[:params]
-      raise e
+
+      error.cause[:request_opts] = opts
+      raise error
+    end
+
+    def query_string(params)
+      if params
+        raise ArgumentError, "params must be Hash" unless params.kind_of?(Hash)
+        "?" << params.collect do |key, val|
+          "#{CGI.escape(key.to_s)}=#{CGI.escape(val.to_s)}"
+        end.join('&')
+      end
     end
 
     def parse_body(body)
