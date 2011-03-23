@@ -119,7 +119,7 @@ module ActiveNode
           ActiveNode.latest_revision(results["revision"]) if results.kind_of?(Hash) and ActiveNode.respond_to?(:latest_revision)
           return results
         else
-          error = ActiveNode::Error.new("#{method} to #{url} failed with HTTP #{e.response_code}")
+          error = ActiveNode::Error.new("#{method} to #{url} failed with HTTP #{curl.response_code}")
           error.cause = parse_body(curl.body_str) || {}
         end
       rescue Curl::Err::CouldntReadError, Curl::Err::ConnectionFailedError => e
