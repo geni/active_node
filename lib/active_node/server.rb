@@ -124,12 +124,13 @@ module ActiveNode
         end
       rescue Curl::Err::CouldntReadError, Curl::Err::ConnectionFailedError => e
         error = ActiveNode::ConnectionError.new("#{e.class} on #{method} to #{url}: #{e.message}")
+        error.cause = {}
       rescue Curl::Err::TimeoutError => e
         error = ActiveNode::TimeoutError.new("#{e.class} on #{method} to #{url}: #{e.message}")
         error.cause = {:timeout => timeout}
       end
 
-      error.cause[:request_opts] = opts
+      error.cause.merge!(opts)
       raise error
     end
 
