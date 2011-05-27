@@ -22,7 +22,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :put,                         req[:method]
+        assert_equal  :post,                        req[:method]
         assert_equal  '/test_model/add',            req[:path]
         assert_equal( {'name' => 'Harley'}.to_json, req[:body])
       end
@@ -50,7 +50,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :put,                          req[:method]
+        assert_equal  :post,                         req[:method]
         assert_equal  '/test_model-1/update',        req[:path]
         assert_equal( {'name' => 'Charlie'}.to_json, req[:body])
       end
@@ -63,7 +63,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :post,            req[:method]
+        assert_equal  :get,             req[:method]
         assert_equal  '/test_model-1/', req[:path]
       end
     end
@@ -76,7 +76,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :post,                   req[:method]
+        assert_equal  :get,                    req[:method]
         assert_equal  '/test_model-1/profile', req[:path]
       end
     end
@@ -102,9 +102,9 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :post,                      req[:method]
-        assert_equal  '/test_model-1/',           req[:path]
-        assert_equal( {:revision => 876}.to_json, req[:body] )
+        assert_equal  :get,                req[:method]
+        assert_equal  '/test_model-1/',    req[:path]
+        assert_equal( {"revision" => 876}, req[:params] )
       end
     end
 
@@ -115,9 +115,9 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :post,                      req[:method]
-        assert_equal  '/test_model-7/node',       req[:path]
-        assert_equal( {:revision => 876}.to_json, req[:body] )
+        assert_equal  :get,                 req[:method]
+        assert_equal  '/test_model-7/node', req[:path]
+        assert_equal( {"revision" => 876},  req[:params] )
       end
     end
 

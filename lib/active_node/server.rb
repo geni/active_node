@@ -16,12 +16,12 @@ module ActiveNode
     end
 
     def read(path, opts = {})
-      http(:post, path, :data => revision(opts))
+      http(:get, path, :params => revision(opts))
     end
 
     def write(path, data, opts = {})
       opts[:request_time] ||= time_usec
-      http(:put, path, :data => data || {}, :params => opts)
+      http(:post, path, :data => data || {}, :params => opts)
 
     rescue ActiveNode::ConnectionError => e
       opts[:retry] ||= 0
