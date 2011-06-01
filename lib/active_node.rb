@@ -84,6 +84,18 @@ module ActiveNode
     absolute_path?(path) ? path : "/#{base}/#{path}" # support relative and absolute paths
   end
 
+  def self.init(*args)
+    ActiveNode::Base.init(*args)
+  end
+
+  def self.node_id(*args)
+    ActiveNode::Base.node_id(*args)
+  end
+
+  def self.node_number(*args)
+    ActiveNode::Base.node_number(*args)
+  end
+
 private
 
   def self.absolute_path?(path)
@@ -96,38 +108,62 @@ private
   end
 
   module ClassMethods
+    def node_id_column(column = nil)
+      return unless isa_ar?
+      if column
+        @node_id_column = column
+      else
+        @node_id_column ||= :node_id
+      end
+    end
+
     def node_type(type = nil)
       if type
         @node_type = type
-      else
+      elsif self != ActiveNode::Base
         @node_type ||= name.underscore
       end
+    end
+
+    def node_id(id_or_node, type = node_type)
+      if id_or_node.respond_to?(:node_id)
+        id_or_node.node_id
+      elsif id_or_node.kind_of?(String)
+        id_type = split_node_id(id_or_node).first
+        return if type and id_type != type
+        id_or_node
+      elsif id_or_node.kind_of?(Integer)
+        "#{type}-#{id_or_node}"
+      end
+    end
+
+    def node_number(node_or_id, type = node_type)
+      return node_or_id if node_or_id.kind_of?(Integer)
+      split_node_id(node_id(node_or_id, type)).last.to_i
+    end
+
+    def split_node_id(node_id)
+      node_id.split('-', 2)
     end
 
     def load_using(method = nil)
       if method
         @load_using = method
       elsif @load_using.nil?
-        isa_ar = defined?(ActiveRecord::Base) and ancestors.include?(ActiveRecord::Base)
-        @load_using = isa_ar ? :find_by_node_id : false
+        @load_using = isa_ar? ? :find_by_node_id : false
       end
       @load_using
     end
 
-    def init(id_or_layers)
-      if id_or_layers.kind_of?(Hash)
-        node_id = id_or_layers.delete(:id) || id_or_layers.delete('id')
-        layer_data = {}
-        id_or_layers.each do |key, val|
-          raise ArgumentError, "layer data must be a Hash; found: #{val.class}" unless val.kind_of?(Hash)
-          layer_data[key.to_sym] = val.clone.freeze
-        end
-      else
-        node_id = id_or_layers
-      end
-      node = load_using ? send(load_using, node_id) : new
-      node.instance_variable_set(:@node_id, node_id)
-      node.instance_variable_set(:@layer_data, layer_data || {})
+    def init(node_id, node_set = nil)
+      return if node_id.nil?
+      node_set ||= ActiveNode::Set.new(node_id)
+      raise "set does not contain node_id #{node_id}" unless node_set.include?(node_id)
+
+      klass = (self == ActiveNode::Base) ? node_id.split('-').first.classify.constantize : self
+      node  = klass.load_using ? klass.send(klass.load_using, node_id) : klass.new
+      node.instance_variable_set(:@node_id,  node_id)
+      node.instance_variable_set(:@node_set, node_set)
       node
     end
 
@@ -140,9 +176,19 @@ private
       path = ActiveNode.resolve_path(path, node_type)
       ActiveNode.write_graph(path, data, opts)
     end
+
+  private
+
+    def isa_ar?
+      defined?(ActiveRecord::Base) and ancestors.include?(ActiveRecord::Base)
+    end
   end
 
   module InstanceMethods
+    def node_id
+      @node_id || self.class.node_id(read_attribute(self.class.node_id_column))
+    end
+
     def read_graph(path = 'node', opts = {})
       (opts, path) = [path, 'node'] if path.kind_of?(Hash)
       path = ActiveNode.resolve_path(path, node_id)
@@ -152,30 +198,6 @@ private
     def write_graph(path, data, opts = {})
       path = ActiveNode.resolve_path(path, node_id)
       self.class.write_graph(path, data, opts)
-    end
-
-    def layer_data
-      @layer_data ||= LayerData.new(self)
-    end
-  end
-
-  class LayerData
-    def initialize(node)
-      @node = node
-      @data = {}
-    end
-
-    def [](layer)
-      layer = layer.to_sym
-      @data[layer] ||= node.get(layer).freeze
-    end
-
-    def keys
-      @data.keys
-    end
-
-    def values
-      @data.values
     end
   end
 end
