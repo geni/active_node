@@ -33,26 +33,26 @@ module ActiveNode
     end
 
     def self.clear_bulk_queue!
-      @@bulk_count    = 0
-      @@bulk_requests = {}
+      @@bulk = {}
+      @@bulk_count = 0
     end
     clear_bulk_queue!
 
     def enqueue_read(path, opts = {})
-      prefix  = host.split('/', 2)[1]
-      path    = "/#{prefix}#{path}" if prefix
-      request = {:path => path, :params => opts, :id => @@bulk_count}
-
-      (@@bulk_requests[self] ||= []) << request
+      id = @@bulk_count
       @@bulk_count += 1
-      request
+
+      @@bulk[self] ||= {:requests => [], :ids => []}
+      @@bulk[self][:requests] << [path, opts]
+      @@bulk[self][:ids]      << id
+      id
     end
 
     def self.bulk_read(opts = {})
       results = []
-      @@bulk_requests.each do |server, requests|
-        server.bulk_read(requests, opts).zip(requests) do |result, request|
-          results[request[:id]] = result
+      @@bulk.each do |server, bulk|
+        server.bulk_read(bulk[:requests], opts).zip(bulk[:ids]) do |result, id|
+          results[id] = result
         end
       end
       clear_bulk_queue!
