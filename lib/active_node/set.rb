@@ -1,3 +1,5 @@
+require 'ordered_set'
+
 module ActiveNode
   class Set
     include Enumerable
@@ -5,7 +7,7 @@ module ActiveNode
     attr_reader :node_ids
 
     def initialize(node_ids)
-      @node_ids   = node_ids.clone.freeze
+      @node_ids   = node_ids.to_ordered_set.freeze
       @layer_data = {}
     end
 
@@ -32,8 +34,12 @@ module ActiveNode
 
     def each
       node_ids.each do |node_id|
-        ActiveNode.init(node_id, self)
+        yield ActiveNode.init(node_id, self)
       end
+    end
+
+    def include?(node_or_id)
+      node_ids.include?(ActiveNode.node_id(node_or_id))
     end
   end
 end
