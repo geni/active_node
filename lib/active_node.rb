@@ -182,6 +182,14 @@ private
       @node_id || self.class.node_id(read_attribute(self.class.node_id_column))
     end
 
+    def node_number
+      self.class.node_number(node_id)
+    end
+
+    def node_type
+      self.class.node_type
+    end
+
     def read_graph(path = 'node', opts = {})
       (opts, path) = [path, 'node'] if path.kind_of?(Hash)
       path = ActiveNode.resolve_path(path, node_id)
