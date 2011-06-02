@@ -88,14 +88,6 @@ module ActiveNode
     ActiveNode::Base.init(*args)
   end
 
-  def self.node_id(*args)
-    ActiveNode::Base.node_id(*args)
-  end
-
-  def self.node_number(*args)
-    ActiveNode::Base.node_number(*args)
-  end
-
 private
 
   def self.absolute_path?(path)
@@ -146,13 +138,8 @@ private
       node_id.split('-', 2)
     end
 
-    def load_using(method = nil)
-      if method
-        @load_using = method
-      elsif @load_using.nil?
-        @load_using = isa_ar? ? :find_by_node_id : false
-      end
-      @load_using
+    def node_class(node_id)
+      node_id.split('-').first.classify.constantize
     end
 
     def init(node_id, node_set = nil)
@@ -160,10 +147,16 @@ private
       node_set ||= ActiveNode::Set.new(node_id)
       raise "set does not contain node_id #{node_id}" unless node_set.include?(node_id)
 
-      klass = (self == ActiveNode::Base) ? node_id.split('-').first.classify.constantize : self
-      node  = klass.load_using ? klass.send(klass.load_using, node_id) : klass.new
+      klass = (self == ActiveNode::Base) ? node_class(node_id) : self
+      node  = klass.new
       node.instance_variable_set(:@node_id,  node_id)
       node.instance_variable_set(:@node_set, node_set)
+
+      if isa_ar?
+        lazy_attrs = LazyHash.new { node_set.layer_data(node_id, :active_record).dup }
+        node.instance_variable_set(:@attributes, lazy_attrs)
+        node.instance_variable_set(:@new_record, false)
+      end
       node
     end
 
@@ -223,7 +216,17 @@ class Class
   def active_node(opts = {})
     extend  ActiveNode::ClassMethods
     include ActiveNode::InstanceMethods
-    load_using opts[:load_using]
-    node_type  opts[:node_type]
+    node_type opts[:node_type]
+  end
+end
+
+class LazyHash
+  def initialize(&block)
+    @initializer = block
+  end
+
+  def method_missing(method, *args)
+    @hash ||= @initializer.call
+    @hash.send(method, *args)
   end
 end
