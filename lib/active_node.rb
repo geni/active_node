@@ -1,3 +1,5 @@
+require 'active_node/collection'
+
 module ActiveNode
   class Error < StandardError
     attr_accessor :cause
@@ -64,7 +66,7 @@ module ActiveNode
   end
 
   def self.write_graph(path, data, opts = {})
-    raise 'cannot write inside a bulk_read block' if @bulk_read
+    raise Error, 'cannot write inside a bulk_read block' if @bulk_read
 
     path   = "/#{path}" unless absolute_path?(path)
     server = ActiveNode.server(:write, path)
@@ -72,7 +74,7 @@ module ActiveNode
   end
 
   def self.bulk_read(opts = {})
-    raise 'cannot nest calls to bulk_read' if @bulk_read
+    raise Error, 'cannot nest calls to bulk_read' if @bulk_read
     @bulk_read = true
     yield
     ActiveNode::Server.bulk_read(opts)
@@ -100,15 +102,6 @@ private
   end
 
   module ClassMethods
-    def node_id_column(column = nil)
-      return unless isa_ar?
-      if column
-        @node_id_column = column
-      else
-        @node_id_column ||= :node_id
-      end
-    end
-
     def node_type(type = nil)
       if type
         @node_type = type
@@ -139,24 +132,19 @@ private
     end
 
     def node_class(node_id)
-      node_id.split('-').first.classify.constantize
+      node_id.split('-').first.camelize.constantize
     end
 
-    def init(node_id, node_set = nil)
+    def init(node_id, node_coll = nil)
       return if node_id.nil?
-      node_set ||= ActiveNode::Set.new(node_id)
-      raise "set does not contain node_id #{node_id}" unless node_set.include?(node_id)
+      node_coll ||= ActiveNode::Collection.new([node_id])
+      raise ArgumentError, "node collection does not contain node_id #{node_id}" unless node_coll.include?(node_id)
 
       klass = (self == ActiveNode::Base) ? node_class(node_id) : self
       node  = klass.new
-      node.instance_variable_set(:@node_id,  node_id)
-      node.instance_variable_set(:@node_set, node_set)
-
-      if isa_ar?
-        lazy_attrs = LazyHash.new { node_set.layer_data(node_id, :active_record).dup }
-        node.instance_variable_set(:@attributes, lazy_attrs)
-        node.instance_variable_set(:@new_record, false)
-      end
+      node.instance_variable_set(:@node_id,   node_id)
+      node.instance_variable_set(:@node_coll, node_coll)
+      node.init_lazy_attributes if node.respond_to?(:init_lazy_attributes)
       node
     end
 
@@ -169,18 +157,17 @@ private
       path = ActiveNode.resolve_path(path, node_type)
       ActiveNode.write_graph(path, data, opts)
     end
-
-  private
-
-    def isa_ar?
-      defined?(ActiveRecord::Base) and ancestors.include?(ActiveRecord::Base)
-    end
   end
 
   module InstanceMethods
     def node_id
       @node_id || self.class.node_id(read_attribute(self.class.node_id_column))
     end
+
+    def meta
+      @node_coll.meta[node_id]
+    end
+    alias edge meta
 
     def node_number
       self.class.node_number(node_id)
@@ -201,29 +188,73 @@ private
       self.class.write_graph(path, data, opts)
     end
   end
+
+  module ActiveRecord
+    module ClassMethods
+      def node_id_column(column = nil)
+        if column
+          @node_id_column = column
+        else
+          @node_id_column ||= :node_id
+        end
+      end
+
+      def find_by_node_id(node_id)
+        find(:first, :conditions => {node_id_column => node_number(node_id)})
+      end
+
+      def find_all_by_node_id(node_ids)
+        return [] unless node_ids
+        node_ids = node_ids.collect {|node_id| node_number(node_id) }
+        find(:all, :conditions => "#{node_id_column} in (#{node_ids.join(',')})")
+      end
+    end
+
+    module InstanceMethods
+      def init_lazy_attributes(node_coll)
+        lazy_attrs = LazyHash.new { node_coll.layer_data(node_id, :active_record).dup }
+        instance_variable_set(:@attributes, lazy_attrs)
+        instance_variable_set(:@new_record, false)
+      end
+    end
+  end
 end
 
 $:.unshift(File.dirname(__FILE__))
 require 'active_node/base'
 require 'active_node/server'
 
-unless String.instance_methods.include?('underscore')
-  class String
-    # Add underscore method if it isn't there. Copied from ActiveSupport::Inflector
-    def underscore
-      self.gsub(/::/, '/').
-        gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
-        gsub(/([a-z\d])([A-Z])/,'\1_\2').
-        tr("-", "_").
-        downcase
+class String
+  # Add underscore and camelize methods if they aren't there. Copied from ActiveSupport::Inflector
+  def underscore
+    self.gsub(/::/, '/').
+      gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+      gsub(/([a-z\d])([A-Z])/,'\1_\2').
+      tr("-", "_").downcase
+  end unless instance_methods.include?('underscore')
+
+  def camelize
+    gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
+  end unless instance_methods.include?('camelize')
+
+  def constantize
+    constant = Object
+    split('::').each do |name|
+      constant = constant.const_defined?(name) ? constant.const_get(name) : constant.const_missing(name)
     end
-  end
+    constant
+  end unless instance_methods.include?('constantize')
 end
 
 class Class
   def active_node(opts = {})
     extend  ActiveNode::ClassMethods
+    extend  ActiveNode::Collection::ClassMethods
     include ActiveNode::InstanceMethods
+    if defined?(ActiveRecord::Base) and ancestors.include?(ActiveRecord::Base)
+      extend  ActiveNode::ActiveRecord::ClassMethods
+      include ActiveNode::ActiveRecord::InstanceMethods
+    end
     node_type opts[:node_type]
   end
 end

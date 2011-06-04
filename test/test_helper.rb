@@ -1,7 +1,12 @@
 require 'rubygems'
 require 'test/unit'
-require File.dirname(__FILE__) + '/../lib/active_node'
-require File.dirname(__FILE__) + '/../lib/active_node/test_helper'
 require 'shoulda'
-require 'pp'
 require 'mocha'
+require 'pp'
+
+$LOAD_PATH.unshift File.dirname(__FILE__) + "/../lib"
+['deep_clonable', 'ordered_set'].each do |dir|
+  $LOAD_PATH.unshift File.dirname(__FILE__) + "/../../#{dir}/lib"
+end
+require 'active_node'
+require 'active_node/test_helper'
