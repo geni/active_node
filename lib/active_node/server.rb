@@ -16,7 +16,7 @@ module ActiveNode
     end
 
     def read(path, opts = {})
-      http(:get, path, :params => revision(opts))
+      http(:get, path, :params => read_opts(opts))
     end
 
     def write(path, data, opts = {})
@@ -60,7 +60,7 @@ module ActiveNode
     end
 
     def bulk_read(requests, opts = {})
-      http(:post, "/bulk-read", :data => requests, :params => revision(opts))
+      http(:post, "/bulk-read", :data => requests, :params => read_opts(opts))
     end
 
     def self.timeout
@@ -84,13 +84,8 @@ module ActiveNode
 
   private
 
-    def revision(opts)
-      if ActiveNode.respond_to?(:latest_revision) and opts['revision'].nil?
-        if (revision = ActiveNode.latest_revision)
-          opts["revision"] = revision
-        end
-      end
-      opts
+    def read_opts(opts)
+      ActiveNode.respond_to?(:update_read_opts) ? ActiveNode.update_read_opts(opts) : opts
     end
 
     def time_usec
@@ -115,8 +110,7 @@ module ActiveNode
         curl.send("http_#{method}", *body)
         if curl.response_code.between?(200, 299)
           results = parse_body(curl.body_str)
-          ActiveNode.log_request(method, path, opts, curl.total_time) if ActiveNode.respond_to?(:log_request)
-          ActiveNode.latest_revision(results["revision"]) if results.kind_of?(Hash) and ActiveNode.respond_to?(:latest_revision)
+          ActiveNode.results_callback(method, path, opts, results, curl.total_time) if ActiveNode.respond_to?(:results_callback)
           return results
         else
           error = ActiveNode::Error.new("#{method} to #{url} failed with HTTP #{curl.response_code}")
