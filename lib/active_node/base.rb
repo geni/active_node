@@ -1,8 +1,14 @@
 module ActiveNode
   class Base
-    extend  ActiveNode::ClassMethods
-    extend  ActiveNode::Collection::ClassMethods
-    include ActiveNode::InstanceMethods
+    extend  ClassMethods
+    include InstanceMethods
+
+    extend  Attributes::ClassMethods
+    include Attributes::InstanceMethods
+
+    extend  Collection::ClassMethods
+    include Collection::InstanceMethods
+
     attr_reader :node_id
   end
 end

@@ -31,6 +31,40 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal( {'name' => 'Harley'}.to_json, req[:body])
       end
     end
+
+    should 'automatically create readers' do
+      schema = {
+        'string'  => {'layer' => 'layer-1', 'type' => 'string'},
+        'int'     => {'layer' => 'layer-1', 'type' => 'int'},
+      }
+      data = [{
+        'id'      => 'person-1',
+        'layer-1' => {
+          'string' => 'string',
+          'int'    => 42,
+        },
+      }]
+
+      mock_active_node(schema, data) do |server|
+        p = Person.init('person-1')
+
+        Person.schema.keys.each do |attr|
+          assert_equal false, Person.instance_methods.include?(attr), "#{attr} should not be defined"
+          p.send(attr)
+          assert_equal true, Person.instance_methods.include?(attr), "#{attr} should be defined"
+        end
+
+        assert_equal 2, server.requests.size, 'only 2 requests should have been made'
+
+        req = server.requests.shift
+        assert_equal :get,             req[:method]
+        assert_equal '/person/schema', req[:path]
+
+        req = server.requests.shift
+        assert_equal :post,         req[:method]
+        assert_equal '/bulk-read',  req[:path]
+      end
+    end
   end
 
   context "An ActiveNode model" do

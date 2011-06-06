@@ -1,3 +1,4 @@
+require 'active_node/attributes'
 require 'active_node/collection'
 
 module ActiveNode

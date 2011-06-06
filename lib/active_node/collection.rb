@@ -38,7 +38,7 @@ module ActiveNode
       layer = layer.to_sym
       if @layer_data[node_id].nil? or @layer_data[node_id][layer].nil?
         type = ActiveNode::Base.split_node_id(node_id).first
-        fetch_layer_data(type, [layer])
+        fetch_layers(type, [layer])
       end
       @layer_data[node_id][layer]
     end
@@ -63,7 +63,16 @@ module ActiveNode
       node_ids.include?(ActiveNode::Base.node_id(node_or_id))
     end
 
+    module InstanceMethods
+
+      def layer_data(layer)
+        @node_coll.layer_data(node_id, layer)
+      end
+
+    end # InstanceMethods
+
     module ClassMethods
+
       ASSOCIATIONS = [:edges, :incoming, :walk]
       def has(name, opts = {})
         associations = ASSOCIATIONS.select {|k| opts[k]}.compact
@@ -88,7 +97,8 @@ module ActiveNode
           end
         end
       end
-    end
+
+    end # ClassMethods
 
     def fetch_layers(type, layers)
       if layers.delete(:active_record)
