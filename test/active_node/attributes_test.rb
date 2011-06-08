@@ -58,8 +58,8 @@ class AttributesTest < Test::Unit::TestCase
       end
 
       should 'call after_add with attrs' do
-        mock_active_node(next_node_id, schema) do
-          Person.expects(:after_add).with(:id => 'person-1', :string => 'one')
+        mock_active_node(next_node_id, schema, {:response => 1}) do
+          Person.expects(:after_add).with(:response => 1)
           Person.add!(:string => 'one')
         end
       end
@@ -148,8 +148,8 @@ class AttributesTest < Test::Unit::TestCase
       end
 
       should 'call after_update with attrs' do
-        mock_active_node(schema) do
-          Person.any_instance.expects(:after_update).with(:string => 'one')
+        mock_active_node(schema, {:response => 1}) do
+          Person.any_instance.expects(:after_update).with(:response => 1)
           Person.init('person-1').update!(:string => 'one')
         end
       end
