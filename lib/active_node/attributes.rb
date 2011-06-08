@@ -14,9 +14,7 @@ module ActiveNode
 
       def update!(attrs)
         return unless attrs = before_update(attrs)
-
-        write_graph('update', self.class.filtered_attrs(attrs), resource_params)
-
+        write_graph('update', self.class.attrs_in_schema(attrs), resource_params)
         reset
         after_update(attrs)
         return self
@@ -47,9 +45,8 @@ module ActiveNode
 
       def add!(attrs)
         return unless attrs = before_add(attrs)
-
         attrs = attrs.merge(:id => next_node_id)
-        write_graph('add', filtered_attrs(attrs), resource_params)
+        write_graph('add', attrs_in_schema(attrs), resource_params)
         after_add(attrs)
         return init(attrs[:id])
       end
@@ -88,7 +85,7 @@ module ActiveNode
         end
       end
 
-      def filtered_attrs(attrs)
+      def attrs_in_schema(attrs)
         attrs.reject {|key, value| not schema.include?(key.to_s)}
       end
 
