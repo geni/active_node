@@ -3,6 +3,7 @@ require 'test/unit'
 require 'shoulda'
 require 'mocha'
 require 'pp'
+require 'active_record'
 
 $LOAD_PATH.unshift File.dirname(__FILE__) + "/../lib"
 ['deep_clonable', 'ordered_set'].each do |dir|

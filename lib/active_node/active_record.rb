@@ -1,9 +1,14 @@
 module ActiveNode::ActiveRecord
-  def active_record(table_name)
+    
+  def active_record(table_name, opts={}, &block)
     @ar_class = Class.new(ActiveRecord::Base)
     @ar_class.set_table_name(table_name)
     @ar_class.send(:extend,  ClassMethods)
     @ar_class.send(:include, InstanceMethods)
+
+    if block_given?
+      @ar_class.class_eval(&block)
+    end
   end
 
   module ClassMethods
