@@ -43,6 +43,10 @@ module ActiveNode
       @layer_data[node_id][layer]
     end
 
+    def reset(node_id)
+      @layer_data.delete(node_id)
+    end
+
     def each
       node_ids.each do |node_id|
         yield ActiveNode.init(node_id, self)
@@ -67,6 +71,11 @@ module ActiveNode
 
       def layer_data(layer)
         @node_coll.layer_data(node_id, layer)
+      end
+
+      def reset
+        @attributes.reset if @attributes
+        @node_coll.reset(node_id)
       end
 
     end # InstanceMethods

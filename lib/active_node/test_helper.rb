@@ -29,9 +29,12 @@ module ActiveNode
     def mock_active_node_error(e)
       server = stub do 
         stubs(:write).raises(e)
+        stubs(:read).raises(e)
       end
       ActiveNode.stubs(:server).returns(server)
       server
     end
   end
 end
+
+Test::Unit::TestCase.send :include, ActiveNode::TestHelper

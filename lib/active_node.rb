@@ -158,7 +158,7 @@ private
       path = ActiveNode.resolve_path(path, node_type)
       ActiveNode.write_graph(path, data, opts)
     end
-  end
+  end # module ClassMethods
 
   module InstanceMethods
     def node_id
@@ -188,7 +188,7 @@ private
       path = ActiveNode.resolve_path(path, node_id)
       self.class.write_graph(path, data, opts)
     end
-  end
+  end # module InstanceMethods
 
   module ActiveRecord
     module ClassMethods
@@ -209,7 +209,7 @@ private
         node_ids = node_ids.collect {|node_id| node_number(node_id) }
         find(:all, :conditions => "#{node_id_column} in (#{node_ids.join(',')})")
       end
-    end
+    end # module ClassMethods
 
     module InstanceMethods
       def init_lazy_attributes(node_coll)
@@ -217,8 +217,8 @@ private
         instance_variable_set(:@attributes, lazy_attrs)
         instance_variable_set(:@new_record, false)
       end
-    end
-  end
+    end # module InstanceMethods
+  end # module ActiveRecord
 end
 
 $:.unshift(File.dirname(__FILE__))
@@ -269,4 +269,9 @@ class LazyHash
     @hash ||= @initializer.call
     @hash.send(method, *args)
   end
+
+  def reset
+    @hash = nil
+  end
+
 end
