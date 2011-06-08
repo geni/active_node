@@ -69,7 +69,7 @@ module ActiveNode
 
     def fetch_layers(type, layers)
       if layers.delete(:active_record)
-        ActiveNode::Base.node_class(type).find_all_by_node_id(node_ids).each do |record|
+        ActiveNode::Base.active_record_class(type).find_all_by_node_id(node_ids).each do |record|
           node_id = record.node_id
           @layer_data[node_id] ||= {}
           @layer_data[node_id][:active_record] = record.instance_variable_get(:@attributes).freeze
@@ -133,7 +133,7 @@ module ActiveNode
               {'node_ids' => data['incoming']}
             end
           when :walk then
-            ActiveNode::Collection.new("/#{self.node_id}/#{path}", defaults.merge(opts)) 
+            ActiveNode::Collection.new("/#{self.node_id}/#{path}", defaults.merge(opts))
           end
         end
       end

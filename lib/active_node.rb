@@ -1,5 +1,6 @@
 require 'active_node/attributes'
 require 'active_node/collection'
+require 'active_node/active_record'
 
 module ActiveNode
   class Error < StandardError
@@ -132,12 +133,14 @@ private
       node_id.split('-', 2)
     end
 
-    def node_class(node_id)
-      node_id.split('-').first.camelize.constantize
+    def node_class(node_id_or_type)
+      split_node_id(node_id_or_type).first.camelize.constantize
     end
 
     def init(node_id, node_coll = nil)
       return if node_id.nil?
+      return node_id if node_id.kind_of?(self) # TODO: ss, write test
+
       node_coll ||= ActiveNode::Collection.new([node_id])
       raise ArgumentError, "node collection does not contain node_id #{node_id}" unless node_coll.include?(node_id)
 
@@ -189,36 +192,6 @@ private
       self.class.write_graph(path, data, opts)
     end
   end # module InstanceMethods
-
-  module ActiveRecord
-    module ClassMethods
-      def node_id_column(column = nil)
-        if column
-          @node_id_column = column
-        else
-          @node_id_column ||= :node_id
-        end
-      end
-
-      def find_by_node_id(node_id)
-        find(:first, :conditions => {node_id_column => node_number(node_id)})
-      end
-
-      def find_all_by_node_id(node_ids)
-        return [] unless node_ids
-        node_ids = node_ids.collect {|node_id| node_number(node_id) }
-        find(:all, :conditions => "#{node_id_column} in (#{node_ids.join(',')})")
-      end
-    end # module ClassMethods
-
-    module InstanceMethods
-      def init_lazy_attributes(node_coll)
-        lazy_attrs = LazyHash.new { node_coll.layer_data(node_id, :active_record).dup }
-        instance_variable_set(:@attributes, lazy_attrs)
-        instance_variable_set(:@new_record, false)
-      end
-    end # module InstanceMethods
-  end # module ActiveRecord
 end
 
 $:.unshift(File.dirname(__FILE__))
