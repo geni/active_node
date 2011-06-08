@@ -67,6 +67,33 @@ module ActiveNode
       node_ids.include?(ActiveNode::Base.node_id(node_or_id))
     end
 
+    def fetch_layers(type, layers)
+      if layers.delete(:active_record)
+        ActiveNode::Base.node_class(type).find_all_by_node_id(node_ids).each do |record|
+          node_id = record.node_id
+          @layer_data[node_id] ||= {}
+          @layer_data[node_id][:active_record] = record.instance_variable_get(:@attributes).freeze
+        end
+      end
+      return if layers.empty?
+
+      ActiveNode.bulk_read do
+        node_ids.each do |node_id|
+          if ActiveNode::Base.node_id(node_id, type)
+            ActiveNode.read_graph("/#{node_id}/data/#{layers.join(',')}")
+          end
+        end
+      end.collect do |layer_data|
+        node_id = layer_data.delete("id")
+        @layer_data[node_id] ||= {}
+        layers.each do |layer|
+          data = layer_data[layer.to_s] || {}
+          @layer_data[node_id][layer.to_sym] = data.freeze
+        end
+        node_id
+      end
+    end
+
     module InstanceMethods
 
       def layer_data(layer)
@@ -98,43 +125,20 @@ module ActiveNode
 
           cache[opts] ||= case type
           when :edges then
-            ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", defaults.merge(opts))
+            ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", defaults.merge(opts)) do |data|
+              {'node_ids' => data['edges'].keys.sort, 'meta' => data['edges']}
+            end
           when :incoming then
-            ActiveNode::Collection.new("/#{self.node_id}/incoming/#{path}", defaults.merge(opts))
+            ActiveNode::Collection.new("/#{self.node_id}/incoming/#{path}", defaults.merge(opts)) do |data|
+              {'node_ids' => data['incoming']}
+            end
           when :walk then
-            ActiveNode::Collection.new("/#{self.node_id}/#{path}", defaults.merge(opts))
+            ActiveNode::Collection.new("/#{self.node_id}/#{path}", defaults.merge(opts)) 
           end
         end
       end
 
     end # ClassMethods
-
-    def fetch_layers(type, layers)
-      if layers.delete(:active_record)
-        ActiveNode::Base.node_class(type).find_all_by_node_id(node_ids).each do |record|
-          node_id = record.node_id
-          @layer_data[node_id] ||= {}
-          @layer_data[node_id][:active_record] = record.instance_variable_get(:@attributes).freeze
-        end
-      end
-      return if layers.empty?
-
-      ActiveNode.bulk_read do
-        node_ids.each do |node_id|
-          if ActiveNode::Base.node_id(node_id, type)
-            ActiveNode.read_graph("/#{node_id}/data/#{layers.join(',')}")
-          end
-        end
-      end.collect do |layer_data|
-        node_id = layer_data.delete("id")
-        @layer_data[node_id] ||= {}
-        layers.each do |layer|
-          data = layer_data[layer.to_s] || {}
-          @layer_data[node_id][layer.to_sym] = data.freeze
-        end
-        node_id
-      end
-    end
 
   private
 

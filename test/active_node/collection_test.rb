@@ -20,7 +20,7 @@ class CollectionTest < Test::Unit::TestCase
         }
 
         # has :friends, :edges => :friends
-        mock_active_node({"node_ids" => edges.keys.sort, "meta" => edges}) do |server|
+        mock_active_node({'edges' => edges}) do |server|
           p = Person.init('person-42')
 
           assert_equal edges.keys.sort,      p.friends.node_ids.to_a
@@ -58,7 +58,7 @@ class CollectionTest < Test::Unit::TestCase
       should 'create collection using incoming edges' do
         node_ids = [ "person-1", "person-8" ]
 
-        mock_active_node({"node_ids" => node_ids}) do |server|
+        mock_active_node({'incoming' => node_ids}) do |server|
           p = Person.init('person-42')
 
           assert_equal node_ids, p.followers.node_ids.to_a
