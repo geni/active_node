@@ -87,8 +87,10 @@ module ActiveNode
     def revision(opts)
       if ActiveNode.respond_to?(:latest_revision) and opts['revision'].nil?
         if (revision = ActiveNode.latest_revision)
-          opts["revision"] = revision
+          opts['revision'] = revision
         end
+      elsif opts['revision'] == :latest
+        opts.delete('revision')
       end
       opts
     end
