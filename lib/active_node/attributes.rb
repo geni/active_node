@@ -5,7 +5,7 @@ module ActiveNode
       def method_missing(name, *args)
         attr = name.to_s.sub(/[\?]?$/, '')
         if self.class.schema.keys.include?(attr)
-          self.class.generate_methods(attr)
+          self.class.generate_method(attr)
           send(name, *args)
         else
           super
@@ -24,6 +24,14 @@ module ActiveNode
         reset
         after_update(response)
         return self
+      end
+
+      def revisions(layers)
+        revisions = {}
+        layers.each do |layer|
+          revisions[layer] = @node_coll.layer_revisions(node_id, layer)
+        end
+        revisions
       end
 
       def before_update(attrs)
@@ -73,10 +81,10 @@ module ActiveNode
         {}
       end
 
-      def generate_methods(attr)
+      def generate_method(attr)
         return unless metadata = schema[attr]
 
-        type_specific = "generate_#{metadata['type']}_methods" # eg generate_boolean_methods
+        type_specific = "generate_#{metadata['type']}_method" # eg generate_boolean_methods
         if respond_to?(type_specific)
           send(type_specific, attr)
         else
@@ -90,7 +98,7 @@ module ActiveNode
         end
       end
 
-      def generate_boolean_methods(attr)
+      def generate_boolean_method(attr)
         define_method("#{attr}?") do
           !! layer_data(self.class.schema[attr]['layer'])[attr]
         end
@@ -107,6 +115,5 @@ module ActiveNode
       end
 
     end # module ClassMethods
-
   end # module Attributes
 end # mmodule ActiveNode

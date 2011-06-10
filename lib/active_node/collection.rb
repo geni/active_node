@@ -13,7 +13,8 @@ module ActiveNode
         @node_ids = ids_or_uri.to_ordered_set.freeze
         @meta     = opts_or_meta.freeze
       end
-      @layer_data = {}
+      @layer_data      = {}
+      @layer_revisions = {}
     end
 
     def assoc(opts)
@@ -38,9 +39,19 @@ module ActiveNode
       layer = layer.to_sym
       if @layer_data[node_id].nil? or @layer_data[node_id][layer].nil?
         type = ActiveNode::Base.split_node_id(node_id).first
-        fetch_layers(type, [layer])
+        fetch_layer_data(type, [layer])
       end
       @layer_data[node_id][layer]
+    end
+
+    def layer_revisions(node_id, layer)
+      return unless include?(node_id)
+      layer = layer.to_sym
+      if @layer_revisions[node_id].nil? or @layer_revisions[node_id][layer].nil?
+        type = ActiveNode::Base.split_node_id(node_id).first
+        fetch_layer_revisions(type, [layer])
+      end
+      @layer_revisions[node_id][layer]
     end
 
     def reset(node_id)
@@ -67,7 +78,7 @@ module ActiveNode
       node_ids.include?(ActiveNode::Base.node_id(node_or_id))
     end
 
-    def fetch_layers(type, layers)
+    def fetch_layer_data(type, layers)
       if layers.delete(:active_record)
         ActiveNode::Base.active_record_class(type).find_all_by_node_id(node_ids).each do |record|
           node_id = record.node_id
@@ -84,11 +95,31 @@ module ActiveNode
           end
         end
       end.collect do |layer_data|
-        node_id = layer_data.delete("id")
+        node_id = layer_data.delete('id')
         @layer_data[node_id] ||= {}
         layers.each do |layer|
           data = layer_data[layer.to_s] || {}
           @layer_data[node_id][layer.to_sym] = data.freeze
+        end
+        node_id
+      end
+    end
+
+    def fetch_layer_revisions(type, layers)
+      return if layers.empty?
+
+      ActiveNode.bulk_read do
+        node_ids.each do |node_id|
+          if ActiveNode::Base.node_id(node_id, type)
+            ActiveNode.read_graph("/#{node_id}/revisions/#{layers.join(',')}")
+          end
+        end
+      end.collect do |layer_revisions|
+        node_id = layer_revisions['id']
+        @layer_revisions[node_id] ||= {}
+        layers.each do |layer|
+          revisions = layer_revisions[layer.to_s]['revisions'] || []
+          @layer_revisions[node_id][layer.to_sym] = revisions.freeze
         end
         node_id
       end
@@ -126,11 +157,11 @@ module ActiveNode
           cache[opts] ||= case type
           when :edges then
             ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", defaults.merge(opts)) do |data|
-              {'node_ids' => data['edges'].keys.sort, 'meta' => data['edges']}
+              {'node_ids' => data[path]['edges'].keys.sort, 'meta' => data[path]['edges']}
             end
           when :incoming then
             ActiveNode::Collection.new("/#{self.node_id}/incoming/#{path}", defaults.merge(opts)) do |data|
-              {'node_ids' => data['incoming']}
+              {'node_ids' => data[path]['incoming']}
             end
           when :walk then
             ActiveNode::Collection.new("/#{self.node_id}/#{path}", defaults.merge(opts))
@@ -147,5 +178,6 @@ module ActiveNode
       @node_ids = data['node_ids'].to_ordered_set.freeze
       @meta     = data['meta'] || {}
     end
+
   end
 end

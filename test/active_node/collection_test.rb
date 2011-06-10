@@ -7,9 +7,7 @@ class Person < ActiveNode::Base
 end
 
 class CollectionTest < Test::Unit::TestCase
-
   context 'An ActiveNode class' do
-
     context 'has class macro' do
 
       # has :friends, :edges => :friends
@@ -20,7 +18,7 @@ class CollectionTest < Test::Unit::TestCase
         }
 
         # has :friends, :edges => :friends
-        mock_active_node({'edges' => edges}) do |server|
+        mock_active_node({'friends' => {'edges' => edges}}) do |server|
           p = Person.init('person-42')
 
           assert_equal edges.keys.sort,      p.friends.node_ids.to_a
@@ -58,7 +56,7 @@ class CollectionTest < Test::Unit::TestCase
       should 'create collection using incoming edges' do
         node_ids = [ "person-1", "person-8" ]
 
-        mock_active_node({'incoming' => node_ids}) do |server|
+        mock_active_node({'followed' => {'incoming' => node_ids}}) do |server|
           p = Person.init('person-42')
 
           assert_equal node_ids, p.followers.node_ids.to_a
@@ -71,9 +69,29 @@ class CollectionTest < Test::Unit::TestCase
           assert_equal '/person-42/incoming/followed', req[:path]
         end
       end
+    end
+  end
 
+  context 'ActiveNode collection' do
+
+    should 'fetch revisions by layer' do
+      revisions43 = {
+        "id" => "person-43",
+        "foo" => {"revisions" => [1, 2, 3]},
+        "bar" => {"revisions" => [3, 4, 5]},
+      }
+      revisions42 = {
+        "id" => "person-42",
+        "foo" => {"revisions" => [12, 13, 14]},
+        "bar" => {"revisions" => [13, 14, 15]},
+      }
+      mock_active_node([revisions43, revisions42]) do |server|
+        p = ActiveNode::Collection.new(['person-42', 'person-43'])
+
+        assert_equal({"foo"=>[12, 13, 14], "bar"=>[13, 14, 15]}, p[0].revisions(['foo', 'bar']))
+        assert_equal({"foo"=>[1, 2, 3],    "bar"=>[3, 4, 5]},    p[1].revisions(['foo', 'bar']))
+      end
     end
 
   end
-
 end # class CollectionTest
