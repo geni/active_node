@@ -50,7 +50,9 @@ module ActiveNode
         node_id  = next_node_id
         response = write_graph('add', attrs_in_schema(attrs.merge(:id => node_id)))
         if respond_to?(:active_record_class)
-          active_record_class.create!(attrs.merge(node_id_column => node_id))
+          active_record_class.class_eval do
+            create!(attrs.merge(node_id_column => node_id))
+          end
         end
 
         node = init(node_id)

@@ -6,6 +6,12 @@ class Person < ActiveNode::Base
   has :followers,    :incoming => :followed
 end
 
+class ArPerson < ActiveNode::Base
+  active_record('person') do
+    node_id_column :node_id
+  end
+end
+
 class AttributesTest < Test::Unit::TestCase
 
   def setup
@@ -61,6 +67,21 @@ class AttributesTest < Test::Unit::TestCase
         mock_active_node(next_node_id, schema, {:response => 1}) do
           Person.any_instance.expects(:after_add).with(:response => 1)
           Person.add!(:string => 'one')
+        end
+      end
+
+    end
+
+    context 'with active_record' do
+
+      context 'add!' do
+        should 'call create! method' do
+          mock_active_node(next_node_id('42'), schema) do |server|
+            ar_class = ArPerson.active_record_class
+            ar_class.stubs(:table_exists? => false, :columns => [])
+            ar_class.expects(:create!).with(:node_id => '42', :string => 'string')
+            ArPerson.add!(:string => 'string')
+          end
         end
       end
 
