@@ -1,13 +1,21 @@
 module ActiveNode::ActiveRecord
-    
+
   def active_record(table_name, opts={}, &block)
     @ar_class = Class.new(ActiveRecord::Base)
     @ar_class.set_table_name(table_name)
     @ar_class.send(:extend,  ClassMethods)
     @ar_class.send(:include, InstanceMethods)
 
+    extend NodeClassMethods
+
     if block_given?
       @ar_class.class_eval(&block)
+    end
+  end
+
+  module NodeClassMethods
+    def active_record_class(type = nil)
+      type ? ActiveNode::Base.node_class(type).active_record_class : @ar_class
     end
   end
 
@@ -30,8 +38,8 @@ module ActiveNode::ActiveRecord
       all(:conditions => {node_id_column => node_ids})
     end
 
-    def active_record_class(type = nil)
-      type ? ActiveNode::Base.node_class(type).active_record_class : self
+    def active_record_class
+      self
     end
   end # module ClassMethods
 
