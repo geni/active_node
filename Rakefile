@@ -26,14 +26,15 @@ end
 
 begin
   require 'rcov/rcovtask'
-  Rcov::RcovTask.new do |test|
+  Rcov::RcovTask.new(:coverage) do |test|
     test.libs << 'test'
     test.pattern = 'test/**/*_test.rb'
+    test.rcov_opts = ['--text-report', '--exclude gems\/', '--sort coverage']
     test.verbose = true
   end
 rescue LoadError
-  task :rcov do
-    abort "RCov is not available. In order to run rcov, you must: sudo gem install spicycode-rcov"
+  task :coverage do
+    abort "RCov is not available. In order to run rcov, you must: gem install rcov"
   end
 end
 
