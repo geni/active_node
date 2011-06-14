@@ -15,52 +15,65 @@ module ActiveNode
       @host = host || DEFAULT_HOST
     end
 
-    def read(path, opts = {})
-      http(:get, path, :params => read_opts(opts))
+    def read(path, params = {})
+      if @@bulk_params
+        enqueue_read(path, params)
+      else
+        http(:method => :get, :path => path, :params => params)
+      end
     end
 
-    def write(path, data, opts = {})
-      opts[:request_time] ||= time_usec
-      http(:post, path, :data => data || {}, :params => opts)
+    def write(path, data, params = {})
+      raise Error, 'cannot write inside a bulk_read block' if @@bulk_params
+
+      params[:request_time] ||= time_usec
+      http(:method => :post, :path => path, :data => data || {}, :params => params)
 
     rescue ActiveNode::ConnectionError => e
-      opts[:retry] ||= 0
-      raise e unless opts[:retry] < RETRY_LIMIT
+      params[:retry] ||= 0
+      raise e unless params[:retry] < RETRY_LIMIT
 
-      opts[:retry] += 1
+      params[:retry] += 1
       sleep(rand(RETRY_WAIT.last - RETRY_WAIT.first + 1) + RETRY_WAIT.first)
       retry
     end
 
     def self.clear_bulk_queue!
-      @@bulk = {}
-      @@bulk_count = 0
+      @@bulk        = {}
+      @@bulk_params = nil
+      @@bulk_count  = 0
     end
     clear_bulk_queue!
 
-    def enqueue_read(path, opts = {})
-      id = @@bulk_count
-      @@bulk_count += 1
-
-      @@bulk[self] ||= {:requests => [], :ids => []}
-      @@bulk[self][:requests] << [path, opts]
-      @@bulk[self][:ids]      << id
-      id
-    end
-
-    def self.bulk_read(opts = {})
+    def self.bulk_read(params)
+      raise Error, 'cannot nest calls to bulk_read' if @@bulk_params
+      @@bulk_params = params
+      yield
       results = []
       @@bulk.each do |server, bulk|
-        server.bulk_read(bulk[:requests], opts).zip(bulk[:ids]) do |result, id|
+        server.bulk_read(bulk[:requests], params).zip(bulk[:ids]) do |result, id|
           results[id] = result
         end
       end
-      clear_bulk_queue!
       results
+    ensure
+      clear_bulk_queue!
     end
 
-    def bulk_read(requests, opts = {})
-      http(:post, "/bulk-read", :data => requests, :params => read_opts(opts))
+    def bulk_read(requests, params)
+      http(:method => :post, :path => "/bulk-read", :data => requests, :params => params)
+    end
+
+    def enqueue_read(path, params = {})
+      id = @@bulk_count
+      @@bulk_count += 1
+
+      # Save space by removing params that are the same as the default.
+      params = params.reject {|k, v| v == @@bulk_params[k]}
+      @@bulk[self] ||= {:requests => [], :ids => []}
+      @@bulk[self][:requests] << [path, params]
+      @@bulk[self][:ids]      << id
+      id
     end
 
     def self.timeout
@@ -84,20 +97,15 @@ module ActiveNode
 
   private
 
-    def read_opts(opts)
-      ActiveNode.respond_to?(:update_read_opts) ? ActiveNode.update_read_opts(opts) : opts
-    end
-
     def time_usec
       t = Time.now
       t.usec + t.to_i * 1_000_000
     end
 
-    def http(method, path, opts = {})
-      url     = "#{host}#{path}#{query_string(opts[:params])}"
+    def http(opts)
+      url     = "#{host}#{opts[:path]}#{query_string(opts[:params])}"
       body    = opts[:data].to_json if opts[:data]
-      headers = {'Content-type' => 'application/json'}
-      headers = headers.merge(ActiveNode.headers) if ActiveNode.respond_to?(:headers)
+      headers = ActiveNode::Base.headers.merge('Content-type' => 'application/json')
       body    = opts[:data] ? [opts[:data].to_json] : []
       error   = nil
 
@@ -107,10 +115,10 @@ module ActiveNode
       end
 
       begin
-        curl.send("http_#{method}", *body)
+        curl.send("http_#{opts[:method]}", *body)
         if curl.response_code.between?(200, 299)
           results = parse_body(curl.body_str)
-          ActiveNode.results_callback(method, path, opts, results, curl.total_time) if ActiveNode.respond_to?(:results_callback)
+          ActiveNode::Base.after_success(opts.merge(:time => curl.total_time, :results => results))
           return results
         else
           error = ActiveNode::Error.new("#{method} to #{url} failed with HTTP #{curl.response_code}")

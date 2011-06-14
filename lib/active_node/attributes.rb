@@ -13,9 +13,8 @@ module ActiveNode
       end
 
       def update!(attrs)
-        return unless attrs = before_update(attrs)
-
-        response = write_graph('update', self.class.attrs_in_schema(attrs), resource_params)
+        attrs    = modify_update_attrs(attrs)
+        response = write_graph('update', self.class.attrs_in_schema(attrs))
         if self.class.respond_to?(:active_record_class)
           record = self.class.active_record_class.find_by_node_id(node_id)
           record.update_attributes!(attrs)
@@ -23,7 +22,7 @@ module ActiveNode
 
         reset
         after_update(response)
-        return self
+        self
       end
 
       def revisions(layers)
@@ -32,17 +31,6 @@ module ActiveNode
           revisions[layer] = @node_coll.layer_revisions(node_id, layer)
         end
         revisions
-      end
-
-      def before_update(attrs)
-        attrs
-      end
-
-      def after_update(response)
-      end
-
-      def resource_params
-        {}
       end
 
     end # module InstanceMethods
@@ -58,27 +46,16 @@ module ActiveNode
       end
 
       def add!(attrs)
-        return unless attrs = before_add(attrs)
-
+        attrs    = modify_add_attrs(attrs)
         node_id  = next_node_id
-        response = write_graph('add', attrs_in_schema(attrs.merge(:id => node_id)), resource_params)
+        response = write_graph('add', attrs_in_schema(attrs.merge(:id => node_id)))
         if respond_to?(:active_record_class)
           active_record_class.create!(attrs.merge(node_id_column => node_id))
         end
 
-        after_add(response)
-        return init(node_id)
-      end
-
-      def before_add(attrs)
-        attrs
-      end
-
-      def after_add(attrs)
-      end
-
-      def resource_params
-        {}
+        node = init(node_id)
+        node.after_add(response)
+        node
       end
 
       def generate_method(attr)

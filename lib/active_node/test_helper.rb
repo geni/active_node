@@ -10,9 +10,9 @@ module ActiveNode
 
   private
 
-    def http(method, path, opts={})
-      @requests << opts.merge(:method => method,
-                              :path   => path,
+    def http(opts)
+      @requests << opts.merge(:method => opts[:method],
+                              :path   => opts[:path],
                               :body   => opts[:data] ? opts[:data].to_json : nil)
       @responses.size > 1 ? @responses.shift : @responses.first
     end
@@ -27,7 +27,7 @@ module ActiveNode
     end
 
     def mock_active_node_error(e)
-      server = stub do 
+      server = stub do
         stubs(:write).raises(e)
         stubs(:read).raises(e)
       end

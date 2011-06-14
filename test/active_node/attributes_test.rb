@@ -50,16 +50,16 @@ class AttributesTest < Test::Unit::TestCase
         end
       end
 
-      should 'call before_add with attrs' do
+      should 'call modify_add_attrs with attrs' do
         mock_active_node(next_node_id, schema) do
-          Person.expects(:before_add).with(:string => 'one').returns(:string => 'one')
+          Person.expects(:modify_add_attrs).with(:string => 'one').returns(:string => 'one')
           Person.add!(:string => 'one')
         end
       end
 
       should 'call after_add with attrs' do
         mock_active_node(next_node_id, schema, {:response => 1}) do
-          Person.expects(:after_add).with(:response => 1)
+          Person.any_instance.expects(:after_add).with(:response => 1)
           Person.add!(:string => 'one')
         end
       end
@@ -140,9 +140,9 @@ class AttributesTest < Test::Unit::TestCase
         end
       end
 
-      should 'call before_update attrs' do
+      should 'call modify_update_attrs' do
         mock_active_node(schema) do
-          Person.any_instance.expects(:before_update).with(:string => 'one').returns(:string => 'one')
+          Person.any_instance.expects(:modify_update_attrs).with(:string => 'one').returns(:string => 'one')
           Person.init('person-1').update!(:string => 'one')
         end
       end
