@@ -107,6 +107,7 @@ module ActiveNode
       body    = opts[:data].to_json if opts[:data]
       headers = ActiveNode::Base.headers.merge('Content-type' => 'application/json')
       body    = opts[:data] ? [opts[:data].to_json] : []
+      method  = opts[:method]
       error   = nil
 
       curl = Curl::Easy.new(url) do |c|
@@ -115,7 +116,7 @@ module ActiveNode
       end
 
       begin
-        curl.send("http_#{opts[:method]}", *body)
+        curl.send("http_#{method}", *body)
         if curl.response_code.between?(200, 299)
           results = parse_body(curl.body_str)
           ActiveNode::Base.after_success(opts.merge(:time => curl.total_time, :results => results))
