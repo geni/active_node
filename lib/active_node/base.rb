@@ -52,19 +52,15 @@ class ActiveNode::Base
     end
 
     def read_graph(path, params = {})
-      ActiveNode.read_graph(resolve_path(path, node_type), modify_read_params(params))
+      ActiveNode.read_graph(ActiveNode.resolve_path(path, node_type), modify_read_params(params))
     end
 
     def write_graph(path, data, params = {})
-      ActiveNode.write_graph(resolve_path(path, node_type), data, modify_write_params(params))
+      ActiveNode.write_graph(ActiveNode.resolve_path(path, node_type), data, modify_write_params(params))
     end
 
     def bulk_read(params = {}, &block)
       ActiveNode.bulk_read(modify_read_params(params), &block)
-    end
-
-    def resolve_path(path, base)
-      absolute_path?(path) ? path : ['', base, path].compact.join('/') # support relative and absolute paths
     end
 
     def after_success(opts)
@@ -84,12 +80,6 @@ class ActiveNode::Base
     def headers
       # Called from ActiveNode::Server to determine which headers send in the request.
       {}
-    end
-
-  private
-
-    def absolute_path?(path)
-      path[0] == ?/
     end
 
   end # module ClassMethods
@@ -114,12 +104,12 @@ class ActiveNode::Base
 
     def read_graph(path = 'node', opts = {})
       (opts, path) = [path, 'node'] if path.kind_of?(Hash)
-      path = self.class.resolve_path(path, node_id)
+      path = ActiveNode.resolve_path(path, node_id)
       self.class.read_graph(path, opts)
     end
 
     def write_graph(path, data, opts = {})
-      path = self.class.resolve_path(path, node_id)
+      path = ActiveNode.resolve_path(path, node_id)
       self.class.write_graph(path, data, opts)
     end
   end # module InstanceMethods

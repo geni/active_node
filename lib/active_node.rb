@@ -53,11 +53,11 @@ module ActiveNode
   end
 
   def self.read_graph(path, params = {})
-    server(:read, path).read(path, params)
+    server(:read, path).read(resolve_path(path), params)
   end
 
   def self.write_graph(path, data, params = {})
-    server(:write, path).write(path, data, params)
+    server(:write, path).write(resolve_path(path), data, params)
   end
 
   def self.bulk_read(params = {}, &block)
@@ -68,7 +68,15 @@ module ActiveNode
     ActiveNode::Base.init(*args)
   end
 
+  def self.resolve_path(path, base = nil)
+    absolute_path?(path) ? path : ['', base, path].compact.join('/') # support relative and absolute paths
+  end
+
 private
+
+  def self.absolute_path?(path)
+    path[0] == ?/
+  end
 
   def self.routes(type)
     @routes ||= {}
