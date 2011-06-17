@@ -13,10 +13,8 @@ module ActiveNode::ActiveRecord
     end
   end
 
-  module NodeClassMethods
-    def active_record_class(type = nil)
-      type ? ActiveNode::Base.node_class(type).active_record_class : @ar_class
-    end
+  def active_record_class(type = nil)
+    type ? ActiveNode::Base.node_class(type).active_record_class : @ar_class
   end
 
   module ClassMethods
@@ -44,8 +42,8 @@ module ActiveNode::ActiveRecord
   end # module ClassMethods
 
   module InstanceMethods
-    def init_lazy_attributes(node_coll)
-      lazy_attrs = LazyHash.new { node_coll.layer_data(node_id, :active_record).dup }
+    def init_lazy_attributes
+      lazy_attrs = LazyHash.new { @node_coll.layer_data(node_id, :active_record).dup }
       instance_variable_set(:@attributes, lazy_attrs)
       instance_variable_set(:@new_record, false)
     end
