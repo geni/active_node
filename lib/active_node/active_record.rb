@@ -6,8 +6,6 @@ module ActiveNode::ActiveRecord
     @ar_class.send(:extend,  ClassMethods)
     @ar_class.send(:include, InstanceMethods)
 
-    extend NodeClassMethods
-
     if block_given?
       @ar_class.class_eval(&block)
     end
@@ -39,14 +37,17 @@ module ActiveNode::ActiveRecord
     def active_record_class
       self
     end
+
   end # module ClassMethods
 
   module InstanceMethods
+
     def init_lazy_attributes
       lazy_attrs = LazyHash.new { @node_coll.layer_data(node_id, :active_record).dup }
       instance_variable_set(:@attributes, lazy_attrs)
       instance_variable_set(:@new_record, false)
     end
+
   end # module InstanceMethods
 end # module ActiveNode::ActiveRecord
 
