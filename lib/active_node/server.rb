@@ -104,7 +104,6 @@ module ActiveNode
 
     def http(opts)
       url     = "#{host}#{opts[:path]}#{query_string(opts[:params])}"
-      body    = opts[:data].to_json if opts[:data]
       headers = ActiveNode::Base.headers.merge('Content-type' => 'application/json')
       body    = opts[:data] ? [opts[:data].to_json] : []
       method  = opts[:method]
