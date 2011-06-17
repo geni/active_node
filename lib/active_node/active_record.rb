@@ -52,3 +52,17 @@ module ActiveNode::ActiveRecord
   end # module InstanceMethods
 end # module ActiveNode::ActiveRecord
 
+class LazyHash
+  def initialize(&block)
+    @initializer = block
+  end
+
+  def method_missing(method, *args)
+    @hash ||= @initializer.call
+    @hash.send(method, *args)
+  end
+
+  def reset
+    @hash = nil
+  end
+end

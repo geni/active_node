@@ -124,20 +124,3 @@ class ActiveNode::Base
     end
   end # module InstanceMethods
 end
-
-$:.unshift(File.dirname(__FILE__))
-class LazyHash
-  def initialize(&block)
-    @initializer = block
-  end
-
-  def method_missing(method, *args)
-    @hash ||= @initializer.call
-    @hash.send(method, *args)
-  end
-
-  def reset
-    @hash = nil
-  end
-
-end
