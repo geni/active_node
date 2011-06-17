@@ -67,6 +67,25 @@ class ActiveNode::Base
       absolute_path?(path) ? path : ['', base, path].compact.join('/') # support relative and absolute paths
     end
 
+    def after_success(opts)
+      # Called after an HTTP success response is received from an ActiveNode::Server.
+    end
+
+    def modify_read_params(params)
+      # Called to allow modification of params before read_graph dispatches to ActiveNode::Server.
+      params
+    end
+
+    def modify_write_params(params)
+      # Called to allow modification of params before write_graph dispatches to ActiveNode::Server.
+      params
+    end
+
+    def headers
+      # Called from ActiveNode::Server to determine which headers send in the request.
+      {}
+    end
+
   private
 
     def absolute_path?(path)

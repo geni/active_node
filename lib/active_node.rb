@@ -78,7 +78,6 @@ end
 
 require 'active_node/base'
 require 'active_node/server'
-require 'active_node/callbacks'
 require 'active_node/attributes'
 require 'active_node/collection'
 require 'active_node/active_record'
@@ -87,14 +86,15 @@ require 'active_node/core_ext'
 class Class
   def active_node(opts = {})
     extend  ActiveNode::Base::ClassMethods
-    extend  ActiveNode::Callbacks::ClassMethods
     extend  ActiveNode::Collection::ClassMethods
-    extend  ActiveNode::Attributes::ClassMethods
 
     include ActiveNode::Base::InstanceMethods
-    include ActiveNode::Callbacks::InstanceMethods
     include ActiveNode::Collection::InstanceMethods
-    include ActiveNode::Attributes::InstanceMethods
+
+    if opts[:attributes]
+      extend  ActiveNode::Attributes::ClassMethods
+      include ActiveNode::Attributes::InstanceMethods
+    end
 
     if defined?(ActiveRecord::Base) and ancestors.include?(ActiveRecord::Base)
       extend  ActiveNode::ActiveRecord::ClassMethods
@@ -106,4 +106,4 @@ class Class
   end
 end
 
-ActiveNode::Base.active_node
+ActiveNode::Base.active_node(:attributes => true)
