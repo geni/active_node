@@ -20,7 +20,6 @@ module ActiveNode
 
     def assoc(opts)
       raise ArgumentError, "cannot change opts without uri" if @uri
-      # TODO: share layer with new instance
       self.class.new(@uri, @opts.merge(opts))
     end
 
