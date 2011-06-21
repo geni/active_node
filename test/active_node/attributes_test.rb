@@ -26,9 +26,7 @@ class AttributesTest < Test::Unit::TestCase
   end
 
   context "An ActiveNode class" do
-
     context 'add!' do
-
       should 'call graph' do
         mock_active_node(next_node_id, schema) do |server|
           p = Person.add!(:string => 'string')
@@ -63,11 +61,9 @@ class AttributesTest < Test::Unit::TestCase
           Person.add!(:string => 'one')
         end
       end
-
     end
 
     context 'with active_record' do
-
       class ArPerson < ActiveNode::Base
         active_record('person') do
           node_id_column :node_id
@@ -84,12 +80,9 @@ class AttributesTest < Test::Unit::TestCase
           end
         end
       end
-
     end
 
-
     should 'automatically create readers' do
-
       data = [{
         'id'      => 'person-1',
         'layer-1' => {
@@ -123,13 +116,10 @@ class AttributesTest < Test::Unit::TestCase
         assert_equal '/bulk-read',  req[:path]
       end
     end
-
   end
 
   context "An ActiveNode model" do
-
     context 'update!' do
-
       should 'update attributes' do
 
         schema = {
@@ -174,7 +164,106 @@ class AttributesTest < Test::Unit::TestCase
           Person.init('person-1').update!(:string => 'one')
         end
       end
+    end
 
+    should 'fetch layer data' do
+      p = Person.init('person-42')
+
+      response = [{
+        'id'  => 'person-42',
+        'foo' => {'bar' => [1,2,3]},
+        'revision' => 43,
+      }]
+
+      mock_active_node(response) do |server|
+        assert_equal({"bar" => [1,2,3]}, p.layer_data('foo'))
+
+        assert_equal 1, server.requests.size
+
+        req = server.requests.shift
+        assert_equal :post,        req[:method]
+        assert_equal '/bulk-read', req[:path]
+        assert_equal [["/person-42/data/foo", {}]], req[:data]
+      end
+    end
+
+    should 'fetch layer data at specific revisions' do
+      p = Person.init('person-42')
+
+      response1 = [{
+        'id'  => 'person-42',
+        'foo' => {'bar' => [1,2,3]},
+        'revision' => 43,
+      }]
+      response2 = [{
+        'id'  => 'person-42',
+        'foo' => {'bar' => [5,4,3,2,1]},
+        'revision' => 41,
+      }]
+
+      mock_active_node(response1, response2) do |server|
+        assert_equal({"bar" => [1,2,3]}, p.layer_data('foo'))
+        assert_equal({"bar" => [1,2,3]}, p.layer_data('foo', 43))
+
+        Person.at_revision(43) do
+          assert_equal({"bar" => [1,2,3]}, p.layer_data('foo'))
+        end
+
+        assert_equal 1, server.requests.size
+
+        req = server.requests.shift
+        assert_equal :post,        req[:method]
+        assert_equal '/bulk-read', req[:path]
+        assert_equal [["/person-42/data/foo", {}]], req[:data]
+
+        Person.at_revision(41) do
+          assert_equal({"bar" => [5,4,3,2,1]}, p.layer_data('foo'))
+        end
+
+        assert_equal({"bar" => [5,4,3,2,1]}, p.layer_data('foo', 41))
+
+        assert_equal 1, server.requests.size
+
+        req = server.requests.shift
+        assert_equal :post,        req[:method]
+        assert_equal '/bulk-read', req[:path]
+        assert_equal [["/person-42/data/foo", {:revision => 41, :historical => true}]], req[:data]
+      end
+    end
+
+    should 'prefetch layer data' do
+      p = Person.init('person-42')
+
+      response = [{
+        'id'  => 'person-42',
+        'foo' => {'bar' => [1,2,3]},
+        'baz' => {'bam' => 'one'},
+        'revision' => 43,
+      }, {
+        'id'  => 'person-42',
+        'foo' => {'bar' => [5,4,3,2,1]},
+        'baz' => {'bam' => 'two'},
+        'revision' => 41,
+      }]
+
+      mock_active_node(response) do |server|
+        p.fetch_layer_data(['foo', 'baz'], [43, 41])
+
+        assert_equal 1, server.requests.size
+
+        req = server.requests.shift
+        assert_equal :post,        req[:method]
+        assert_equal '/bulk-read', req[:path]
+        assert_equal [["/person-42/data/foo,baz", {:revision => 43, :historical => true}],
+                      ["/person-42/data/foo,baz", {:revision => 41, :historical => true}]], req[:data]
+
+        assert_equal({"bar" => [1,2,3]},     p.layer_data('foo', 43))
+        assert_equal({"bam" => 'one'},       p.layer_data('baz', 43))
+        assert_equal({"bar" => [5,4,3,2,1]}, p.layer_data('foo', 41))
+        assert_equal({"bam" => 'two'},       p.layer_data('baz', 41))
+
+        assert_equal 0, server.requests.size
+      end
     end
   end
 end

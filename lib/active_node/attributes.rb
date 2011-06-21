@@ -25,6 +25,15 @@ module ActiveNode
         node
       end
 
+      attr_reader :revision
+
+      def at_revision(revision)
+        @revision, old_revision = revision, @revision
+        yield
+      ensure
+        @revision = old_revision
+      end
+
       def generate_method(attr)
         return unless metadata = schema[attr]
 
@@ -90,12 +99,25 @@ module ActiveNode
         self
       end
 
+      def layer_data(layer, revision = self.class.revision)
+        @node_coll.layer_data(node_id, layer, revision)
+      end
+
       def revisions(layers)
+        return revisions([layers])[layers] unless layers.kind_of?(Array)
         revisions = {}
         layers.each do |layer|
           revisions[layer] = @node_coll.layer_revisions(node_id, layer)
         end
         revisions
+      end
+
+      def fetch_layer_data(layers, revisions)
+        @node_coll.fetch_layer_data(node_type, layers, revisions)
+      end
+
+      def fetch_layer_revisions(layers)
+        @node_coll.fetch_layer_revisions(node_type, layers)
       end
 
       def modify_update_attrs(attrs)

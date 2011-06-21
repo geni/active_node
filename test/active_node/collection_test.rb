@@ -9,7 +9,6 @@ end
 class CollectionTest < Test::Unit::TestCase
   context 'An ActiveNode class' do
     context 'has class macro' do
-
       # has :friends, :edges => :friends
       should 'create collection using edges' do
         edges = {
@@ -73,7 +72,6 @@ class CollectionTest < Test::Unit::TestCase
   end
 
   context 'ActiveNode collection' do
-
     should 'fetch revisions by layer' do
       revisions43 = {
         "id" => "person-43",
@@ -92,6 +90,6 @@ class CollectionTest < Test::Unit::TestCase
         assert_equal({"foo"=>[1, 2, 3],    "bar"=>[3, 4, 5]},    p[1].revisions(['foo', 'bar']))
       end
     end
-
   end
+
 end # class CollectionTest

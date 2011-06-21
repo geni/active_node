@@ -4,6 +4,8 @@ module ActiveNode
   class Collection
     include Enumerable
 
+    attr_reader :current_revision
+
     def initialize(ids_or_uri, opts_or_meta = {}, &block)
       if ids_or_uri.kind_of?(String)
         @uri     = ids_or_uri
@@ -13,8 +15,7 @@ module ActiveNode
         @node_ids = ids_or_uri.to_ordered_set.freeze
         @meta     = opts_or_meta.freeze
       end
-      @layer_data      = {}
-      @layer_revisions = {}
+      reset
     end
 
     def assoc(opts)
@@ -33,15 +34,17 @@ module ActiveNode
       @meta
     end
 
-    def layer_data(node_id, layer)
-      # TODO: lock layer data to a specific revision
+    def layer_data(node_id, layer, revision)
       return unless include?(node_id)
       layer = layer.to_sym
-      if @layer_data[node_id].nil? or @layer_data[node_id][layer].nil?
+      revision ||= @current_revision
+
+      if @layer_data[node_id].nil? or @layer_data[node_id][revision].nil? or @layer_data[node_id][revision][layer].nil?
         type = ActiveNode::Base.split_node_id(node_id).first
-        fetch_layer_data(type, [layer])
+        max_rev = fetch_layer_data(type, [layer], [revision])
+        @current_revision = revision = max_rev if revision.nil?
       end
-      @layer_data[node_id][layer]
+      @layer_data[node_id][revision][layer]
     end
 
     def layer_revisions(node_id, layer)
@@ -54,8 +57,15 @@ module ActiveNode
       @layer_revisions[node_id][layer]
     end
 
-    def reset(node_id)
-      @layer_data.delete(node_id)
+    def reset(node_id = nil)
+      if node_id
+        @layer_data.delete(node_id)
+        @layer_revisions.delete(node_id)
+      else
+        @layer_data       = {}
+        @layer_revisions  = {}
+        @current_revision = nil
+      end
     end
 
     def each
@@ -78,7 +88,7 @@ module ActiveNode
       node_ids.include?(ActiveNode::Base.node_id(node_or_id))
     end
 
-    def fetch_layer_data(type, layers)
+    def fetch_layer_data(type, layers, revisions)
       if layers.delete(:active_record)
         ActiveNode::Base.active_record_class(type).find_all_by_node_id(node_ids).each do |record|
           node_id = record.node_id
@@ -89,20 +99,25 @@ module ActiveNode
       return if layers.empty?
 
       ActiveNode.bulk_read do
-        node_ids.each do |node_id|
-          if ActiveNode::Base.node_id(node_id, type)
-            ActiveNode.read_graph("/#{node_id}/data/#{layers.join(',')}")
+        revisions.each do |revision|
+          node_ids.each do |node_id|
+            if ActiveNode::Base.node_id(node_id, type)
+              opts = revision ? {:revision => revision, :historical => true} : {}
+              ActiveNode.read_graph("/#{node_id}/data/#{layers.join(',')}", opts)
+            end
           end
         end
       end.collect do |layer_data|
-        node_id = layer_data.delete('id')
+        node_id  = layer_data['id']
+        revision = layer_data['revision']
         @layer_data[node_id] ||= {}
+        @layer_data[node_id][revision] ||= {}
         layers.each do |layer|
           data = layer_data[layer.to_s] || {}
-          @layer_data[node_id][layer.to_sym] = data.freeze
+          @layer_data[node_id][revision][layer.to_sym] = data.freeze
         end
-        node_id
-      end
+        revision
+      end.max
     end
 
     def fetch_layer_revisions(type, layers)
@@ -124,19 +139,6 @@ module ActiveNode
         node_id
       end
     end
-
-    module InstanceMethods
-
-      def layer_data(layer)
-        @node_coll.layer_data(node_id, layer)
-      end
-
-      def reset
-        @attributes.reset if @attributes
-        @node_coll.reset(node_id)
-      end
-
-    end # InstanceMethods
 
     module ClassMethods
 
@@ -170,6 +172,15 @@ module ActiveNode
       end
 
     end # ClassMethods
+
+    module InstanceMethods
+
+      def reset
+        @attributes.reset if @attributes
+        @node_coll.reset(node_id)
+      end
+
+    end # InstanceMethods
 
   private
 
