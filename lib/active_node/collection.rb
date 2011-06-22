@@ -101,7 +101,7 @@ module ActiveNode
         revisions.each do |revision|
           node_ids.each do |node_id|
             if ActiveNode::Base.node_id(node_id, type)
-              opts = revision ? {:revision => revision, :historical => true} : {}
+              opts = Collection.revision_opts(revision)
               ActiveNode.read_graph("/#{node_id}/data/#{layers.join(',')}", opts)
             end
           end
@@ -139,6 +139,10 @@ module ActiveNode
       end
     end
 
+    def self.revision_opts(revision)
+      revision ? {:revision => revision, :historical => true} : {}
+    end
+
     module ClassMethods
 
       ASSOCIATIONS = [:edges, :incoming, :walk]
@@ -148,7 +152,7 @@ module ActiveNode
 
         type     = associations.first
         path     = opts.delete(type).to_s.gsub(/_/, '-')
-        defaults = opts.freeze
+        defaults = opts.merge(Collection.revision_opts(@revision)).freeze
         cache    = {}
 
         define_method(name) do |*args|
