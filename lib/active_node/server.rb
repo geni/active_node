@@ -124,7 +124,7 @@ module ActiveNode
           error = ActiveNode::Error.new("#{method} to #{url} failed with HTTP #{curl.response_code}")
           error.cause = parse_body(curl.body_str) || {}
         end
-      rescue Curl::Err::CouldntReadError, Curl::Err::ConnectionFailedError => e
+      rescue Curl::Err::CouldntReadError, Curl::Err::ConnectionFailedError, Curl::Err::GotNothingError => e
         error = ActiveNode::ConnectionError.new("#{e.class} on #{method} to #{url}: #{e.message}")
         error.cause = {}
       rescue Curl::Err::TimeoutError => e
