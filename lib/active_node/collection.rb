@@ -33,17 +33,17 @@ module ActiveNode
       @meta
     end
 
-    def layer_data(node_id, layer, revision)
+    def layer_data(node_id, layer, revision=nil)
       return unless include?(node_id)
       layer = layer.to_sym
       revision ||= @current_revision
 
-      if @layer_data[node_id].nil? or @layer_data[node_id][revision].nil? or @layer_data[node_id][revision][layer].nil?
+      if @layer_data[node_id].nil? or @layer_data[node_id][layer].nil? or @layer_data[node_id][layer][revision].nil?
         type = ActiveNode::Base.split_node_id(node_id).first
         max_rev = fetch_layer_data(type, [layer], [revision])
         @current_revision = revision = max_rev if revision.nil?
       end
-      @layer_data[node_id][revision][layer]
+      @layer_data[node_id][layer][revision]
     end
 
     def layer_revisions(node_id, layer)
@@ -92,7 +92,7 @@ module ActiveNode
         ActiveNode::Base.active_record_class(type).find_all_by_node_id(node_ids).each do |record|
           node_id = record.node_id
           @layer_data[node_id] ||= {}
-          @layer_data[node_id][:active_record] = record.instance_variable_get(:@attributes).freeze
+          @layer_data[node_id][:active_record] = { nil => record.instance_variable_get(:@attributes).freeze }
         end
       end
       return if layers.empty?
@@ -110,10 +110,10 @@ module ActiveNode
         node_id  = layer_data['id']
         revision = layer_data['revision']
         @layer_data[node_id] ||= {}
-        @layer_data[node_id][revision] ||= {}
+        @layer_data[node_id][layer.to_sym] ||= {}
         layers.each do |layer|
           data = layer_data[layer.to_s] || {}
-          @layer_data[node_id][revision][layer.to_sym] = data.freeze
+          @layer_data[node_id][layer.to_sym][revision] = data.freeze
         end
         revision
       end.max
