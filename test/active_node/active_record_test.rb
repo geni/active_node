@@ -39,4 +39,21 @@ class ActiveRecordTest < Test::Unit::TestCase
     
   end
 
+  context 'An ActiveRecord::Base class' do
+
+    context 'with active_node mixed in' do
+
+      class ArPerson < ActiveRecord::Base
+        active_node
+      end
+
+      should 'add find_by_node_id method' do 
+        ArPerson.stubs(:table_exists? => false, :columns => [])
+        assert_equal true, ArPerson.methods.include?('find_by_node_id')
+      end
+
+    end
+
+  end
+
 end # class ActiveRecordTest
