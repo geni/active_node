@@ -19,7 +19,7 @@ module ActiveNode
       if @@bulk_params
         enqueue_read(path, params)
       else
-        http(:method => :get, :path => path, :params => params)
+        http(:method => :read, :path => path, :params => params)
       end
     end
 
@@ -27,7 +27,7 @@ module ActiveNode
       raise Error, 'cannot write inside a bulk_read block' if @@bulk_params
 
       params[:request_time] ||= time_usec
-      http(:method => :post, :path => path, :data => data || {}, :params => params)
+      http(:method => :write, :path => path, :data => data || {}, :params => params)
 
     rescue ActiveNode::ConnectionError => e
       params[:retry] ||= 0
@@ -61,7 +61,7 @@ module ActiveNode
     end
 
     def bulk_read(requests, params)
-      http(:method => :post, :path => "/bulk-read", :data => requests, :params => params)
+      http(:method => :bulk_read, :path => "/bulk-read", :data => requests, :params => params)
     end
 
     def enqueue_read(path, params = {})
@@ -102,11 +102,17 @@ module ActiveNode
       t.usec + t.to_i * 1_000_000
     end
 
+    HTTP_METHOD = {
+      :write     => :post,
+      :read      => :get,
+      :bulk_read => :post,
+    }
+
     def http(opts)
       url     = "#{host}#{opts[:path]}#{query_string(opts[:params])}"
       headers = ActiveNode::Base.headers.merge('Content-type' => 'application/json')
       body    = opts[:data] ? [opts[:data].to_json] : []
-      method  = opts[:method]
+      method  = HTTP_METHOD[opts[:method]]
       error   = nil
 
       curl = Curl::Easy.new(url) do |c|

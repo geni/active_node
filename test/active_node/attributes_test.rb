@@ -34,15 +34,15 @@ class AttributesTest < Test::Unit::TestCase
           assert_equal 3, server.requests.size, 'only 2 requests should have been made'
 
           req = server.requests.shift
-          assert_equal :get,                    req[:method]
+          assert_equal :read,                   req[:method]
           assert_equal '/person/next-node-id',  req[:path]
 
           req = server.requests.shift
-          assert_equal :get,                    req[:method]
+          assert_equal :read,                   req[:method]
           assert_equal '/person/schema',        req[:path]
 
           req = server.requests.shift
-          assert_equal :post,                   req[:method]
+          assert_equal :write,                  req[:method]
           assert_equal '/person/add',           req[:path]
           assert_equal({:id => 'person-1', :string => 'string'},  req[:data])
         end
@@ -108,12 +108,12 @@ class AttributesTest < Test::Unit::TestCase
         assert_equal 2, server.requests.size, 'only 2 requests should have been made'
 
         req = server.requests.shift
-        assert_equal :get,             req[:method]
+        assert_equal :read,            req[:method]
         assert_equal '/person/schema', req[:path]
 
         req = server.requests.shift
-        assert_equal :post,         req[:method]
-        assert_equal '/bulk-read',  req[:path]
+        assert_equal :bulk_read,   req[:method]
+        assert_equal '/bulk-read', req[:path]
       end
     end
   end
@@ -141,11 +141,11 @@ class AttributesTest < Test::Unit::TestCase
           assert_equal 2, server.requests.size
 
           req = server.requests.shift
-          assert_equal  :get,             req[:method]
-          assert_equal  '/person/schema', req[:path]
+          assert_equal :read,            req[:method]
+          assert_equal '/person/schema', req[:path]
 
           req = server.requests.shift
-          assert_equal :post,               req[:method]
+          assert_equal :write,              req[:method]
           assert_equal '/person-1/update',  req[:path]
           assert_equal({'string' => 'new', 'int' => 42},  JSON.parse(req[:body]))
         end
@@ -181,7 +181,7 @@ class AttributesTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
 
         req = server.requests.shift
-        assert_equal :post,        req[:method]
+        assert_equal :bulk_read,   req[:method]
         assert_equal '/bulk-read', req[:path]
         assert_equal [["/person-42/data/foo", {}]], req[:data]
       end
@@ -212,7 +212,7 @@ class AttributesTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
 
         req = server.requests.shift
-        assert_equal :post,        req[:method]
+        assert_equal :bulk_read,   req[:method]
         assert_equal '/bulk-read', req[:path]
         assert_equal [["/person-42/data/foo", {}]], req[:data]
 
@@ -225,7 +225,7 @@ class AttributesTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
 
         req = server.requests.shift
-        assert_equal :post,        req[:method]
+        assert_equal :bulk_read,   req[:method]
         assert_equal '/bulk-read', req[:path]
         assert_equal [["/person-42/data/foo", {:revision => 41, :historical => true}]], req[:data]
       end
@@ -252,7 +252,7 @@ class AttributesTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
 
         req = server.requests.shift
-        assert_equal :post,        req[:method]
+        assert_equal :bulk_read,   req[:method]
         assert_equal '/bulk-read', req[:path]
         assert_equal [["/person-42/data/foo,baz", {:revision => 43, :historical => true}],
                       ["/person-42/data/foo,baz", {:revision => 41, :historical => true}]], req[:data]

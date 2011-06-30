@@ -26,7 +26,7 @@ class CollectionTest < Test::Unit::TestCase
           assert_equal 1, server.requests.size
           req = server.requests.shift
 
-          assert_equal :get,                       req[:method]
+          assert_equal :read,                      req[:method]
           assert_equal '/person-42/edges/friends', req[:path]
         end
       end
@@ -46,7 +46,7 @@ class CollectionTest < Test::Unit::TestCase
           assert_equal 1, server.requests.size
           req = server.requests.shift
 
-          assert_equal :get,                            req[:method]
+          assert_equal :read,                           req[:method]
           assert_equal '/person-42/friends-of-friends', req[:path]
         end
       end
@@ -64,7 +64,7 @@ class CollectionTest < Test::Unit::TestCase
           assert_equal 1, server.requests.size
           req = server.requests.shift
 
-          assert_equal :get,                           req[:method]
+          assert_equal :read,                          req[:method]
           assert_equal '/person-42/incoming/followed', req[:path]
         end
       end

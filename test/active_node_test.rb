@@ -17,7 +17,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :post,                        req[:method]
+        assert_equal  :write,                       req[:method]
         assert_equal  '/person/add',                req[:path]
         assert_equal( {'name' => 'Harley'}.to_json, req[:body])
       end
@@ -39,7 +39,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :post,                         req[:method]
+        assert_equal  :write,                        req[:method]
         assert_equal  '/person-1/update',            req[:path]
         assert_equal( {'name' => 'Charlie'}.to_json, req[:body])
       end
@@ -52,7 +52,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :get,         req[:method]
+        assert_equal  :read,        req[:method]
         assert_equal  '/person-1/', req[:path]
       end
     end
@@ -65,7 +65,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :get,                req[:method]
+        assert_equal  :read,               req[:method]
         assert_equal  '/person-1/profile', req[:path]
       end
     end
@@ -90,7 +90,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal  :get,                req[:method]
+        assert_equal  :read,               req[:method]
         assert_equal  '/person-7/node',    req[:path]
         assert_equal( {"revision" => 876}, req[:params] )
       end
@@ -106,7 +106,7 @@ class ActiveNodeTest < Test::Unit::TestCase
         assert_equal 1, server.requests.size
         req = server.requests.shift
 
-        assert_equal :post,        req[:method]
+        assert_equal :bulk_read,   req[:method]
         assert_equal '/bulk-read', req[:path]
         assert_equal [['/person-5/node', {}],
                       ['/person-7/node', {}]].to_json, req[:body]
