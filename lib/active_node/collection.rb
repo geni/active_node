@@ -110,9 +110,9 @@ module ActiveNode
         node_id  = layer_data['id']
         revision = layer_data['revision']
         @layer_data[node_id] ||= {}
-        @layer_data[node_id][layer.to_sym] ||= {}
         layers.each do |layer|
           data = layer_data[layer.to_s] || {}
+          @layer_data[node_id][layer.to_sym] ||= {}
           @layer_data[node_id][layer.to_sym][revision] = data.freeze
         end
         revision
