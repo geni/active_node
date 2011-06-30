@@ -38,7 +38,7 @@ module ActiveNode
       layer = layer.to_sym
       revision ||= @current_revision
 
-      if @layer_data[node_id].nil? or @layer_data[node_id][layer].nil? or @layer_data[node_id][layer][revision].nil?
+      if @layer_data[node_id][layer][revision].nil?
         type = ActiveNode::Base.split_node_id(node_id).first
         max_rev = fetch_layer_data(type, [layer], [revision])
         @current_revision = revision = max_rev if revision.nil?
@@ -49,7 +49,7 @@ module ActiveNode
     def layer_revisions(node_id, layer)
       return unless include?(node_id)
       layer = layer.to_sym
-      if @layer_revisions[node_id].nil? or @layer_revisions[node_id][layer].nil?
+      if @layer_revisions[node_id][layer].nil?
         type = ActiveNode::Base.split_node_id(node_id).first
         fetch_layer_revisions(type, [layer])
       end
@@ -61,8 +61,8 @@ module ActiveNode
         @layer_data.delete(node_id)
         @layer_revisions.delete(node_id)
       else
-        @layer_data       = {}
-        @layer_revisions  = {}
+        @layer_data       = DeepHash.new(3)
+        @layer_revisions  = DeepHash.new(2)
         @current_revision = nil
       end
     end
@@ -89,10 +89,13 @@ module ActiveNode
 
     def fetch_layer_data(type, layers, revisions)
       if layers.delete(:active_record)
-        ActiveNode::Base.active_record_class(type).find_all_by_node_id(node_ids).each do |record|
+        record_class = ActiveNode::Base.active_record_class(type)
+        record_class.find_all_by_node_id(node_ids).each do |record|
           node_id = record.node_id
-          @layer_data[node_id] ||= {}
-          @layer_data[node_id][:active_record] = { nil => record.instance_variable_get(:@attributes).freeze }
+          @layer_data[node_id][:active_record][nil] = record.instance_variable_get(:@attributes).freeze
+        end
+        node_ids.each do |node_id|
+          @layer_data[node_id][:active_record][nil] ||= record_class.new.instance_variable_get(:@attributes).freeze
         end
       end
       return if layers.empty?
@@ -109,10 +112,8 @@ module ActiveNode
       end.collect do |layer_data|
         node_id  = layer_data['id']
         revision = layer_data['revision']
-        @layer_data[node_id] ||= {}
         layers.each do |layer|
           data = layer_data[layer.to_s] || {}
-          @layer_data[node_id][layer.to_sym] ||= {}
           @layer_data[node_id][layer.to_sym][revision] = data.freeze
         end
         revision
@@ -130,7 +131,6 @@ module ActiveNode
         end
       end.collect do |layer_revisions|
         node_id = layer_revisions['id']
-        @layer_revisions[node_id] ||= {}
         layers.each do |layer|
           revisions = layer_revisions[layer.to_s]['revisions'] || []
           @layer_revisions[node_id][layer.to_sym] = revisions.freeze

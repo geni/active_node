@@ -19,3 +19,13 @@ class String
     constant
   end unless instance_methods.include?('constantize')
 end
+
+class DeepHash < Hash
+  def initialize(depth=nil)
+    return super() if [0,1].include?(depth)
+
+    super() do |hash, key|
+      hash[key] = DeepHash.new(depth ? depth - 1 : nil)
+    end
+  end
+end
