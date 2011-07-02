@@ -34,31 +34,31 @@ module ActiveNode
         @revision = old_revision
       end
 
-      def generate_method(attr)
-        return unless metadata = schema[attr]
+      def layer_attr(attr, default_layer = nil)
+        attr = attr.to_s
+        raise "cannot create reader for attr #{attr} not in schema" unless metadata = schema[attr]
+        default_layer = metadata.keys.first if metadata.size == 1
+        default_layer = default_layer.to_s  if default_layer
 
-        type_specific = "generate_#{metadata['type']}_method" # eg generate_boolean_methods
-        if respond_to?(type_specific)
-          send(type_specific, attr)
-        else
-          generate_reader_method(attr)
+        define_method(attr) do |*args|
+          raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" unless default_layer or args.size == 1
+          layer = (args.first || default_layer).to_s
+          raise "attr #{attr} does not exist on layer #{layer}" unless metadata[layer]
+          layer_data(layer)[attr]
         end
-      end
 
-      def generate_reader_method(attr)
-        define_method(attr) do
-          layer_data(self.class.schema[attr]['layer'])[attr]
-        end
-      end
-
-      def generate_boolean_method(attr)
-        define_method("#{attr}?") do
-          !! layer_data(self.class.schema[attr]['layer'])[attr]
+        if default_layer and metadata[default_layer]["type"] == "boolean"
+          define_method("#{attr}?") do
+            !!layer_data(default_layer)[attr]
+          end
         end
       end
 
       def attrs_in_schema(attrs)
-        attrs.reject {|key, value| not schema.include?(key.to_s)}
+        attrs.reject do |key, value|
+          key = key.to_s
+          key != "id" and not schema.include?(key)
+        end
       end
 
       def modify_add_attrs(attrs)
@@ -79,7 +79,7 @@ module ActiveNode
       def method_missing(name, *args)
         attr = name.to_s.sub(/[\?]?$/, '')
         if self.class.schema.keys.include?(attr)
-          self.class.generate_method(attr)
+          self.class.layer_attr(attr)
           send(name, *args)
         else
           super

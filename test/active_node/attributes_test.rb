@@ -18,10 +18,11 @@ class AttributesTest < Test::Unit::TestCase
 
   def schema
     {
-      'id'      => {'layer' => 'layer-1', 'type' => 'string'},
-      'string'  => {'layer' => 'layer-1', 'type' => 'string'},
-      'int'     => {'layer' => 'layer-1', 'type' => 'int'},
-      'bool'    => {'layer' => 'layer-1', 'type' => 'boolean'},
+      'string' => {'a' => {'type' => 'string'}},
+      'int'    => {'a' => {'type' => 'int'}},
+      'bool'   => {'a' => {'type' => 'boolean'}},
+      'foo'    => {'a' => {'type' => 'string'}, 'b' => {'type' => 'int'}},
+      'bar'    => {'a' => {'type' => 'string'}, 'b' => {'type' => 'int'}},
     }
   end
 
@@ -31,7 +32,7 @@ class AttributesTest < Test::Unit::TestCase
         mock_active_node(next_node_id, schema) do |server|
           p = Person.add!(:string => 'string')
 
-          assert_equal 3, server.requests.size, 'only 2 requests should have been made'
+          assert_equal 3, server.requests.size, 'only 3 requests should have been made'
 
           req = server.requests.shift
           assert_equal :read,                   req[:method]
@@ -44,7 +45,7 @@ class AttributesTest < Test::Unit::TestCase
           req = server.requests.shift
           assert_equal :write,                  req[:method]
           assert_equal '/person/add',           req[:path]
-          assert_equal({:id => 'person-1', :string => 'string'},  req[:data])
+          assert_equal({:id => 'person-1', :string => 'string'}, req[:data])
         end
       end
 
@@ -83,37 +84,71 @@ class AttributesTest < Test::Unit::TestCase
     end
 
     should 'automatically create readers' do
-      data = [{
+      data1 = [{
         'id'      => 'person-1',
-        'layer-1' => {
-          'string' => 'string',
+        'a' => {
+          'string' => 'hello',
           'int'    => 42,
-          'boolean'=> true,
-        },
+          'id'     => 'person-1',
+          'foo'    => 'ABC',
+          'bar'    => 'XYZ',
+        }
+      }]
+      data2 = [{
+        'id'      => 'person-1',
+        'b' => {
+          'foo'    => 123,
+          'bar'    => 456,
+        }
       }]
 
-      mock_active_node(schema, data) do |server|
+      mock_active_node(schema, data1, data2) do |server|
         p = Person.init('person-1')
 
-        ['string', 'int'].each do |attr|
-          assert_equal false, Person.instance_methods.include?(attr), "#{attr} should not be defined"
-          p.send(attr)
-          assert_equal true, Person.instance_methods.include?(attr), "#{attr} should be defined"
+        assert_equal false, Person.instance_methods.include?('int'),    "int should not be defined"
+        assert_equal false, Person.instance_methods.include?('string'), "string should not be defined"
+        assert_equal false, Person.instance_methods.include?('bool'),   "bool should not be defined"
+        assert_equal false, Person.instance_methods.include?('bool?'),  "bool? should not be defined"
+        assert_equal false, Person.instance_methods.include?('foo'),    "foo should not be defined"
+        assert_equal false, Person.instance_methods.include?('bar'),    "bar should not be defined"
+
+        assert_raises(ArgumentError) do
+          p.foo
         end
 
-        assert_equal false, Person.instance_methods.include?('bool?'), "bool? should not be defined"
-        p.bool?
-        assert_equal true, Person.instance_methods.include?('bool?'), "bool? should be defined"
+        Person.layer_attr :bar, :a
 
-        assert_equal 2, server.requests.size, 'only 2 requests should have been made'
+        assert_equal 42,      p.int
+        assert_equal 'hello', p.string
+        assert_equal nil,     p.bool
+        assert_equal false,   p.bool?
+        assert_equal 'XYZ',   p.bar
+        assert_equal 456,     p.bar(:b)
+        assert_equal 'ABC',   p.foo(:a)
+        assert_equal 123,     p.foo(:b)
+
+        assert_equal true, Person.instance_methods.include?('int'),    "int should not be defined"
+        assert_equal true, Person.instance_methods.include?('string'), "string should not be defined"
+        assert_equal true, Person.instance_methods.include?('bool'),   "bool should not be defined"
+        assert_equal true, Person.instance_methods.include?('bool?'),  "bool? should not be defined"
+        assert_equal true, Person.instance_methods.include?('foo'),    "foo should not be defined"
+        assert_equal true, Person.instance_methods.include?('bar'),    "bar should not be defined"
+
+        assert_equal 3, server.requests.size, 'only 2 requests should have been made'
 
         req = server.requests.shift
         assert_equal :read,            req[:method]
         assert_equal '/person/schema', req[:path]
 
         req = server.requests.shift
-        assert_equal :bulk_read,   req[:method]
-        assert_equal '/bulk-read', req[:path]
+        assert_equal :bulk_read,                 req[:method]
+        assert_equal '/bulk-read',               req[:path]
+        assert_equal [["/person-1/data/a", {}]], req[:data]
+
+        req = server.requests.shift
+        assert_equal :bulk_read,                 req[:method]
+        assert_equal '/bulk-read',               req[:path]
+        assert_equal [["/person-1/data/b", {}]], req[:data]
       end
     end
   end
@@ -123,14 +158,13 @@ class AttributesTest < Test::Unit::TestCase
       should 'update attributes' do
 
         schema = {
-          'string'  => {'layer' => 'layer-1', 'type' => 'string'},
-          'int'     => {'layer' => 'layer-2', 'type' => 'int'},
+          'string'  => {'foo' => {'type' => 'string'}},
+          'int'     => {'foo' => {'type' => 'int'}},
         }
-
         data = [{
-          'id'      => 'person-1',
-          'layer-2' => {
-            'int'    => 42,
+          'id'  => 'person-1',
+          'foo' => {
+            'int' => 42,
           },
         }]
 
