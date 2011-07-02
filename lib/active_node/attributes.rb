@@ -34,6 +34,12 @@ module ActiveNode
         @revision = old_revision
       end
 
+      def layer_attrs(attr_to_layer)
+        attr_to_layer.each do |attr, layer|
+          layer_attr attr, layer
+        end
+      end
+
       def layer_attr(attr, default_layer = nil)
         attr = attr.to_s
         raise "cannot create reader for attr #{attr} not in schema" unless metadata = schema[attr]

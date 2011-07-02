@@ -116,7 +116,7 @@ class AttributesTest < Test::Unit::TestCase
           p.foo
         end
 
-        Person.layer_attr :bar, :a
+        Person.layer_attrs :bar => :a
 
         assert_equal 42,      p.int
         assert_equal 'hello', p.string
