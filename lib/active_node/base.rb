@@ -40,8 +40,9 @@ class ActiveNode::Base
       return if node_id.nil?
       return node_id if node_id.kind_of?(self) # TODO: ss, write test
 
-      node_coll ||= ActiveNode::Collection.new([node_id])
-      raise ArgumentError, "node collection does not contain node_id #{node_id}" unless node_coll.include?(node_id)
+      if node_coll and not node_coll.include?(node_id)
+        raise ArgumentError, "node collection does not contain node_id #{node_id}"
+      end
 
       klass = (self == ActiveNode::Base) ? node_class(node_id) : self
       node  = klass.new
@@ -89,8 +90,12 @@ class ActiveNode::Base
       @node_id || self.class.node_id(read_attribute(self.class.node_id_column))
     end
 
+    def node_coll
+      @node_coll ||= ActiveNode::Collection.new([node_id])
+    end
+
     def meta
-      @node_coll.meta[node_id]
+      node_coll.meta[node_id]
     end
     alias edge meta
 

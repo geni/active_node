@@ -180,7 +180,28 @@ module ActiveNode
 
       def reset
         @attributes.reset if @attributes
-        @node_coll.reset(node_id)
+        node_coll.reset(node_id)
+      end
+
+      def layer_data(layer, revision = self.class.revision)
+        node_coll.layer_data(node_id, layer, revision)
+      end
+
+      def fetch_layer_data(layers, revisions)
+        node_coll.fetch_layer_data(node_type, layers, revisions)
+      end
+
+      def revisions(layers)
+        return revisions([layers])[layers] unless layers.kind_of?(Array)
+        revisions = {}
+        layers.each do |layer|
+          revisions[layer] = node_coll.layer_revisions(node_id, layer)
+        end
+        revisions
+      end
+
+      def fetch_layer_revisions(layers)
+        node_coll.fetch_layer_revisions(node_type, layers)
       end
 
     end # InstanceMethods
