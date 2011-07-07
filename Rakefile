@@ -10,7 +10,8 @@ begin
     gem.email = "code@justinbalthrop.com"
     gem.homepage = "http://github.com/ninjudd/active_node"
     gem.authors = ["Justin Balthrop"]
-    # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
+    gem.add_dependency('ordered_set', '>= 1.0.0')
+    gem.add_dependency('deep_hash',   '>= 0.0.1')
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError

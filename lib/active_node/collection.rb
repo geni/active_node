@@ -1,4 +1,5 @@
 require 'ordered_set'
+require 'deep_hash'
 
 module ActiveNode
   class Collection
@@ -61,8 +62,8 @@ module ActiveNode
         @layer_data.delete(node_id)
         @layer_revisions.delete(node_id)
       else
-        @layer_data       = DeepHash.new(3)
-        @layer_revisions  = DeepHash.new(2)
+        @layer_data       = Hash.deep(2)
+        @layer_revisions  = Hash.deep(1)
         @current_revision = nil
       end
     end
