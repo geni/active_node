@@ -25,15 +25,6 @@ module ActiveNode
         node
       end
 
-      attr_reader :revision
-
-      def at_revision(revision)
-        @revision, old_revision = revision, @revision
-        yield
-      ensure
-        @revision = old_revision
-      end
-
       def layer_attrs(attr_to_layer)
         attr_to_layer.each do |attr, layer|
           layer_attr attr, layer

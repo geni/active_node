@@ -1,6 +1,4 @@
 class ActiveNode::Base
-  attr_reader :node_id
-
   module ClassMethods
     def node_type(type = nil)
       return if self == ActiveNode::Base
@@ -34,6 +32,15 @@ class ActiveNode::Base
 
     def node_class(node_id_or_type)
       split_node_id(node_id_or_type).first.camelize.constantize
+    end
+
+    attr_reader :revision
+
+    def at_revision(revision)
+      @revision, old_revision = revision, @revision
+      yield
+    ensure
+      @revision = old_revision
     end
 
     def init(node_id, node_coll = nil)
