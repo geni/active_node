@@ -11,16 +11,18 @@ module ActiveNode
       end
 
       def add!(attrs)
-        attrs    = modify_add_attrs(attrs)
-        node_id  = next_node_id
-        response = write_graph('add', attrs_in_schema(attrs.merge(:id => node_id)))
+        attrs   = modify_add_attrs(attrs)
+        params  = attrs.delete(:active_node_params) || {}
+        node_id = next_node_id
+
         if active_record_class
           active_record_class.class_eval do
             create!(attrs.merge(node_id_column => node_id))
           end
         end
 
-        node = init(node_id)
+        response = write_graph('add', attrs_in_schema(attrs.merge(:id => node_id)), params)
+        node     = init(node_id)
         node.after_add(response)
         node
       end
@@ -85,7 +87,8 @@ module ActiveNode
 
       def update!(attrs)
         attrs    = modify_update_attrs(attrs)
-        response = write_graph('update', self.class.attrs_in_schema(attrs))
+        params   = attrs.delete(:active_node_params) || {}
+        response = write_graph('update', self.class.attrs_in_schema(attrs), params)
         if self.class.active_record_class
           record = self.class.active_record_class.find_by_node_id(node_id)
           record.update_attributes!(attrs)
