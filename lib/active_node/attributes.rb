@@ -15,8 +15,8 @@ module ActiveNode
         params  = attrs.delete(:active_node_params) || {}
         node_id = next_node_id
 
-        if active_record_class
-          active_record_class.class_eval do
+        if ar_class
+          ar_class.class_eval do
             create!(attrs.merge(node_id_column => node_id))
           end
         end
@@ -33,20 +33,28 @@ module ActiveNode
         end
       end
 
-      def layer_attr(attr, default_layer = nil)
+      def layer_attr(attr, default_layer = nil, opts = {})
         attr = attr.to_s
-        raise "cannot create reader for attr #{attr} not in schema" unless metadata = schema[attr]
-        default_layer = metadata.keys.first if metadata.size == 1
+
+        if default_layer
+          type = opts[:type]
+        else
+          raise "cannot create reader for attr #{attr} not in schema" unless attr_schema = schema[attr]
+          if attr_schema.size == 1
+            default_layer = attr_schema.keys.first
+            type          = attr_schema.values.first['type']
+          end
+        end
         default_layer = default_layer.to_s  if default_layer
 
         define_method(attr) do |*args|
           raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" unless default_layer or args.size == 1
           layer = (args.first || default_layer).to_s
-          raise "attr #{attr} does not exist on layer #{layer}" unless metadata[layer]
+          raise "attr #{attr} does not exist on layer #{layer}" unless self.class.schema[attr][layer]
           layer_data(layer)[attr]
         end
 
-        if default_layer and metadata[default_layer]["type"] == "boolean"
+        if default_layer and 'boolean' == type.to_s
           define_method("#{attr}?") do
             !!layer_data(default_layer)[attr]
           end
@@ -89,8 +97,8 @@ module ActiveNode
         attrs    = modify_update_attrs(attrs)
         params   = attrs.delete(:active_node_params) || {}
         response = write_graph('update', self.class.attrs_in_schema(attrs), params)
-        if self.class.active_record_class
-          record = self.class.active_record_class.find_by_node_id(node_id)
+        if self.class.ar_class
+          record = self.class.ar_class.find_by_node_id(node_id)
           record.update_attributes!(attrs)
         end
 

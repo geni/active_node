@@ -9,10 +9,14 @@ module ActiveNode::ActiveRecord
     if block_given?
       @ar_class.class_eval(&block)
     end
+
+    define_method :ar_instance do
+      @ar_instance ||= self.class.ar_class.find_by_node_id(node_number)
+    end
   end
 
-  def active_record_class(type = nil)
-    type ? ActiveNode::Base.node_class(type).active_record_class : @ar_class
+  def ar_class(type = nil)
+    type ? ActiveNode::Base.node_class(type).ar_class : @ar_class
   end
 
   module ClassMethods
@@ -34,7 +38,7 @@ module ActiveNode::ActiveRecord
       all(:conditions => {node_id_column => node_ids})
     end
 
-    def active_record_class
+    def ar_class
       self
     end
 

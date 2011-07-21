@@ -20,16 +20,16 @@ class ActiveRecordTest < Test::Unit::TestCase
         end
       end
 
-      should 'add active_record_class method' do
-        assert_equal true, Person.respond_to?(:active_record_class)
+      should 'add ar_class method' do
+        assert_equal true, Person.respond_to?(:ar_class)
       end
 
       should 'set node_id_column' do
-        assert_equal 'foo_id', Person.active_record_class.node_id_column
+        assert_equal 'foo_id', Person.ar_class.node_id_column
       end
 
       should 'allow method definitions in block' do
-        ar_class = Person.active_record_class
+        ar_class = Person.ar_class
         ar_class.stubs(:table_exists? => false, :columns => [])
         assert_equal 'instance', ar_class.new.foo, 'instance method should be defined'
         assert_equal 'class', ar_class.foo, 'class method should be defined'
