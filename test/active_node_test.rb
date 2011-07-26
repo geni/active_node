@@ -28,8 +28,8 @@ class ActiveNodeTest < Test::Unit::TestCase
   context "An ActiveNode model" do
 
     should "set @node_id in init" do
-      t = Person.init('model-43')
-      assert_equal 'model-43', t.instance_variable_get(:@node_id)
+      assert_equal 'person-43', Person.init('person-43').instance_variable_get(:@node_id)
+      assert_equal 'person-43', Person.init(43).instance_variable_get(:@node_id)
     end
 
     should "send attributes as JSON body on write" do

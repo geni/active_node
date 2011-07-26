@@ -47,6 +47,8 @@ class ActiveNode::Base
       return if node_id.nil?
       return node_id if node_id.kind_of?(self) # TODO: ss, write test
 
+      node_id = node_id(node_id)
+
       if node_coll and not node_coll.include?(node_id)
         raise ArgumentError, "node collection does not contain node_id #{node_id}"
       end
