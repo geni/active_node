@@ -6,6 +6,9 @@ class Person < ActiveNode::Base
   has :followers,    :incoming => :followed
 end
 
+class Other < ActiveNode::Base
+end
+
 class ActiveNodeTest < Test::Unit::TestCase
   include ActiveNode::TestHelper
 
@@ -23,9 +26,13 @@ class ActiveNodeTest < Test::Unit::TestCase
       end
     end
 
-  end
+    should 'load properly from MethodCache' do
+      assert_equal Person.init('person-42'), ActiveNode::Base._load(Marshal.dump('person-42'))
+    end
 
-  context "An ActiveNode model" do
+  end # context 'An ActiveNode class'
+
+  context 'An ActiveNode instance' do
 
     should "set @node_id in init" do
       assert_equal 'person-43', Person.init('person-43').instance_variable_get(:@node_id)
@@ -112,6 +119,23 @@ class ActiveNodeTest < Test::Unit::TestCase
                       ['/person-7/node', {}]].to_json, req[:body]
       end
     end
-  end
+
+    should 'dump properly to MethodCache' do
+      assert_equal Marshal.dump('person-42'), Person.init('person-42')._dump(nil)
+    end
+
+    should 'be equal when class and node_id are the same' do
+      assert_equal Person.init('person-42'), Person.init('person-42')
+    end
+
+    should 'be unequal when class is different' do
+      assert_not_equal Other.init('person-42'), Person.init('person-42')
+    end
+
+    should 'be unequal when node_id is different' do
+      assert_not_equal Person.init('person-42'), Person.init('person-43')
+    end
+
+  end # context 'An ActiveNode instance'
 
 end
