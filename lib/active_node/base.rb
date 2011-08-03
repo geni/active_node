@@ -93,7 +93,6 @@ class ActiveNode::Base
       {}
     end
 
-    # used by 
     def _load(str)
       node_id = Marshal.load(str)
       raise DumperException, 'invalid format' unless node_id.kind_of?(String)
@@ -125,7 +124,6 @@ class ActiveNode::Base
       self.class.write_graph(path, data, opts)
     end
 
-    # Used by MethodCache gem
     def _dump(ignored)
       Marshal.dump(node_id)
     end

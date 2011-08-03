@@ -1,9 +1,13 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
+class Birth < ActiveNode::Base
+end
+
 class Person < ActiveNode::Base
-  has :friends,      :edges    => :friends
-  has :aquaintences, :walk     => :friends_of_friends
-  has :followers,    :incoming => :followed
+  has      :friends,      :edges    => :friends
+  has      :aquaintences, :walk     => :friends_of_friends
+  has      :followers,    :incoming => :followed
+  contains :birth
 end
 
 class AttributesTest < Test::Unit::TestCase
@@ -16,20 +20,35 @@ class AttributesTest < Test::Unit::TestCase
     {'node_id' => value}
   end
 
-  def schema
+  def person_schema
     {
       'string' => {'a' => {'type' => 'string'}},
       'int'    => {'a' => {'type' => 'int'}},
       'bool'   => {'a' => {'type' => 'boolean'}},
       'foo'    => {'a' => {'type' => 'string'}, 'b' => {'type' => 'int'}},
       'bar'    => {'a' => {'type' => 'string'}, 'b' => {'type' => 'int'}},
+      'birth'  => {'events' => {'type' => 'message'}},
+    }
+  end
+
+  def birth_schema
+    {
+      'description' => {'b' => {'type' => 'string'}},
+    }
+  end
+
+  def person_birth_schema
+    {
+      'day'   => {'events' => {'type' => 'int'}},
+      'month' => {'events' => {'type' => 'int'}},
+      'year'  => {'events' => {'type' => 'int'}},
     }
   end
 
   context "An ActiveNode class" do
     context 'add!' do
       should 'call graph' do
-        mock_active_node(next_node_id, schema) do |server|
+        mock_active_node(next_node_id, person_schema) do |server|
           p = Person.add!(:string => 'string')
 
           assert_equal 3, server.requests.size, 'only 3 requests should have been made'
@@ -50,14 +69,14 @@ class AttributesTest < Test::Unit::TestCase
       end
 
       should 'call modify_add_attrs with attrs' do
-        mock_active_node(next_node_id, schema) do
+        mock_active_node(next_node_id, person_schema) do
           Person.expects(:modify_add_attrs).with(:string => 'one').returns(:string => 'one')
           Person.add!(:string => 'one')
         end
       end
 
       should 'call after_add with attrs' do
-        mock_active_node(next_node_id, schema, {:response => 1}) do
+        mock_active_node(next_node_id, person_schema, {:response => 1}) do
           Person.any_instance.expects(:after_add).with(:response => 1)
           Person.add!(:string => 'one')
         end
@@ -73,7 +92,7 @@ class AttributesTest < Test::Unit::TestCase
 
       context 'add!' do
         should 'call create! method' do
-          mock_active_node(next_node_id('42'), schema) do |server|
+          mock_active_node(next_node_id('42'), person_schema) do |server|
             ar_class = ArPerson.ar_class
             ar_class.stubs(:table_exists? => false, :columns => [])
             ar_class.expects(:create!).with(:node_id => '42', :string => 'string')
@@ -102,7 +121,7 @@ class AttributesTest < Test::Unit::TestCase
         }
       }]
 
-      mock_active_node(schema, data1, data2) do |server|
+      mock_active_node(person_schema, data1, data2) do |server|
         p = Person.init('person-1')
 
         assert_equal false, Person.instance_methods.include?('int'),    "int should not be defined"
@@ -151,7 +170,7 @@ class AttributesTest < Test::Unit::TestCase
         assert_equal [["/person-1/data/b", {}]], req[:data]
       end
     end
-  end
+  end # context 'An ActiveNode class'
 
   context "An ActiveNode model" do
     context 'update!' do
@@ -186,14 +205,14 @@ class AttributesTest < Test::Unit::TestCase
       end
 
       should 'call modify_update_attrs' do
-        mock_active_node(schema) do
+        mock_active_node(person_schema) do
           Person.any_instance.expects(:modify_update_attrs).with(:string => 'one').returns(:string => 'one')
           Person.init('person-1').update!(:string => 'one')
         end
       end
 
       should 'call after_update with attrs' do
-        mock_active_node(schema, {:response => 1}) do
+        mock_active_node(person_schema, {:response => 1}) do
           Person.any_instance.expects(:after_update).with(:response => 1)
           Person.init('person-1').update!(:string => 'one')
         end
@@ -299,5 +318,45 @@ class AttributesTest < Test::Unit::TestCase
         assert_equal 0, server.requests.size
       end
     end
+
+    context 'contains birth' do
+
+      person_data = [{
+        'id'  => 'person-1',
+        'events' => {'birth' => {'day' => 1, 'month' => 1, 'year' => 2001}},
+        'revision' => 43,
+      }]
+      birth_data =[{
+        'id'  => 'birth-1',
+        'b' => {'description' => 'foo'},
+        'revision' => 43,
+      }]
+
+      should 'access birth through profile' do
+        Birth.reset
+        mock_active_node(birth_schema, person_birth_schema, person_data, birth_data) do |server|
+          p = Person.init('person-1')
+          assert_equal Birth,     p.birth.class
+          assert_equal 'birth-1', p.birth.node_id
+          assert_equal 1,         p.birth.day
+          assert_equal 1,         p.birth.month
+          assert_equal 2001,      p.birth.year
+          assert_equal 'foo',     p.birth.description
+        end
+      end
+
+      should 'init birth directly' do
+        Birth.reset
+        mock_active_node(birth_schema, person_birth_schema, person_data, birth_data) do |server|
+          b = Birth.init('birth-1')
+          assert_equal Birth,     b.class
+          assert_equal 'birth-1', b.node_id
+          assert_equal 1,         b.day
+          assert_equal 1,         b.month
+          assert_equal 2001,      b.year
+          assert_equal 'foo',     b.description
+        end
+      end
+    end # context 'contains birth'
   end
 end

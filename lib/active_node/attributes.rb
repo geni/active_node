@@ -63,7 +63,7 @@ module ActiveNode
           raise "attr #{attr} does not exist on layer #{layer}" unless schema = self.class.schema[attr][layer]
 
           if schema[:contained]
-            node_container.layer_data(layer)[attr]
+            node_container.layer_data(layer)[node_type.to_s][attr]
           else
             layer_data(layer)[attr]
           end
@@ -93,7 +93,7 @@ module ActiveNode
           contained_types << type
 
           klass = type.to_s.classify.constantize
-          klass.contained_by(:type => type, :class => self)
+          klass.contained_by(:type => node_type, :class => self)
 
           define_method(type) do
             @contained_nodes ||= {}
