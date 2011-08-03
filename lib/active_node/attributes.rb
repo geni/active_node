@@ -7,7 +7,17 @@ module ActiveNode
       end
 
       def schema
-        @schema ||= read_graph('schema')
+        if @schema.nil?
+          @schema = read_graph('schema')
+
+          node_container_class.read_graph("schema/#{node_type}").each do |attr, layers|
+            layers.each do |layer, meta|
+              @schema[attr] ||= {}
+              @schema[attr][layer] = meta.merge(:contained => true)
+            end
+          end if node_container_class
+        end
+        @schema
       end
 
       def add!(attrs)
@@ -37,7 +47,7 @@ module ActiveNode
         attr = attr.to_s
 
         if default_layer
-          type     = opts[:type]
+          type = opts[:type]
         else
           raise "cannot create reader for attr #{attr} not in schema" unless attr_schema = schema[attr]
           if attr_schema.size == 1
@@ -50,8 +60,13 @@ module ActiveNode
         define_method(attr) do |*args|
           raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" unless default_layer or args.size == 1
           layer = (args.first || default_layer).to_s
-          raise "attr #{attr} does not exist on layer #{layer}" unless self.class.schema[attr][layer]
-          layer_data(layer)[attr]
+          raise "attr #{attr} does not exist on layer #{layer}" unless schema = self.class.schema[attr][layer]
+
+          if schema[:contained]
+            node_container.layer_data(layer)[attr]
+          else
+            layer_data(layer)[attr]
+          end
         end
 
         if default_layer and 'boolean' == type.to_s
@@ -73,6 +88,35 @@ module ActiveNode
         attrs
       end
 
+      def contains(*types)
+        types.each do |type|
+          contained_types << type
+
+          klass = type.to_s.classify.constantize
+          klass.contained_by(:type => type, :class => self)
+
+          define_method(type) do
+            @contained_nodes ||= {}
+            @contained_nodes[type] ||= klass.init("#{type}-#{node_number}", :container => self)
+          end
+        end
+      end
+
+      def contained_types
+        @contained_types ||= [].to_set
+      end
+
+      attr_reader :contained_by_class
+      def contained_by(opts = nil)
+        return @contained_by unless opts
+        @contained_by = opts
+      end
+
+      def node_container_class
+        return unless contained_by
+        @node_container_class ||= contained_by[:class]
+      end
+
     private
 
       def next_node_id
@@ -91,6 +135,16 @@ module ActiveNode
         else
           super
         end
+      end
+
+      def node_container_id
+        return unless contained_by = self.class.contained_by
+        @node_container_id ||= "#{contained_by[:type]}-#{node_number}"
+      end
+
+      def node_container
+        return unless self.class.contained_by
+        @node_container ||= self.class.node_container_class.init(node_container_id)
       end
 
       def update!(attrs)
