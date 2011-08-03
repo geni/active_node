@@ -37,7 +37,7 @@ module ActiveNode
         attr = attr.to_s
 
         if default_layer
-          type = opts[:type]
+          type     = opts[:type]
         else
           raise "cannot create reader for attr #{attr} not in schema" unless attr_schema = schema[attr]
           if attr_schema.size == 1

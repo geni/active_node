@@ -70,15 +70,15 @@ module ActiveNode
 
     def each
       node_ids.each do |node_id|
-        yield ActiveNode.init(node_id, self)
+        yield ActiveNode.init(node_id, :collection => self)
       end
     end
 
     def [](index)
       if index.kind_of?(String) and node_ids.include?(index)
-        ActiveNode.init(index, self)
+        ActiveNode.init(index, :collection => self)
       elsif index.kind_of?(Integer)
-        ActiveNode.init(node_ids[index], self)
+        ActiveNode.init(node_ids[index], :collection => self)
       else
         raise ArgumentError, "String or Integer required as index for []"
       end
@@ -179,30 +179,39 @@ module ActiveNode
 
     module InstanceMethods
 
+      def node_collection
+        @node_collection ||= ActiveNode::Collection.new([node_id])
+      end
+
+      def meta
+        node_collection.meta[node_id]
+      end
+      alias edge meta
+
       def reset
         @attributes.reset if @attributes
-        node_coll.reset(node_id)
+        node_collection.reset(node_id)
       end
 
       def layer_data(layer, revision = self.class.revision)
-        node_coll.layer_data(node_id, layer, revision)
+        node_collection.layer_data(node_id, layer, revision)
       end
 
       def fetch_layer_data(layers, revisions)
-        node_coll.fetch_layer_data(node_type, layers, revisions)
+        node_collection.fetch_layer_data(node_type, layers, revisions)
       end
 
       def revisions(layers)
         return revisions([layers])[layers] unless layers.kind_of?(Array)
         revisions = {}
         layers.each do |layer|
-          revisions[layer] = node_coll.layer_revisions(node_id, layer)
+          revisions[layer] = node_collection.layer_revisions(node_id, layer)
         end
         revisions
       end
 
       def fetch_layer_revisions(layers)
-        node_coll.fetch_layer_revisions(node_type, layers)
+        node_collection.fetch_layer_revisions(node_type, layers)
       end
 
     end # InstanceMethods

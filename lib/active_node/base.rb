@@ -43,20 +43,21 @@ class ActiveNode::Base
       @revision = old_revision
     end
 
-    def init(node_id, node_coll = nil)
+    def init(node_id, opts = {})
       return if node_id.nil?
       return node_id if node_id.kind_of?(self) # TODO: ss, write test
 
       node_id = node_id(node_id)
 
-      if node_coll and not node_coll.include?(node_id)
+      if opts[:collection] and not opts[:collection].include?(node_id)
         raise ArgumentError, "node collection does not contain node_id #{node_id}"
       end
 
       klass = (self == ActiveNode::Base) ? node_class(node_id) : self
       node  = klass.new
-      node.instance_variable_set(:@node_id,   node_id)
-      node.instance_variable_set(:@node_coll, node_coll)
+      node.instance_variable_set(:@node_id,         node_id)
+      node.instance_variable_set(:@node_collection, opts[:collection])
+      node.instance_variable_set(:@node_container,  opts[:container])
       node.init_lazy_attributes if node.respond_to?(:init_lazy_attributes)
       node
     end
@@ -104,15 +105,6 @@ class ActiveNode::Base
     def node_id
       @node_id || self.class.node_id(read_attribute(self.class.node_id_column))
     end
-
-    def node_coll
-      @node_coll ||= ActiveNode::Collection.new([node_id])
-    end
-
-    def meta
-      node_coll.meta[node_id]
-    end
-    alias edge meta
 
     def node_number
       self.class.node_number(node_id)
