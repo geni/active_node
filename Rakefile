@@ -30,7 +30,7 @@ begin
   Rcov::RcovTask.new(:coverage) do |test|
     test.libs << 'test'
     test.pattern = 'test/**/*_test.rb'
-    test.rcov_opts = ['--text-report', '--exclude gems\/', '--sort coverage']
+    test.rcov_opts = ['--text-coverage', '--exclude gems\/', '--sort coverage', '--threshold 100']
     test.verbose = true
   end
 rescue LoadError
