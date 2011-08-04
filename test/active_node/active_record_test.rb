@@ -38,9 +38,18 @@ class ActiveRecordTest < Test::Unit::TestCase
         assert_equal 'ActiveRecordTest::Person::ActiveRecord', ar_class.name
       end
 
-    end
+      should 'have an ar_instance' do
+        p = Person.init(1)
+        columns = [
+          ActiveRecord::ConnectionAdapters::Column.new('node_id', nil, 'int')
+        ]
+        Person.ar_class.stubs(:table_exists? => false, :columns => columns, :find_by_node_id => nil)
+        assert_equal 1, p.ar_instance.node_id
+        assert_equal p, p.ar_instance.node
+      end
 
-  end
+    end # context 'active_record class macro'
+  end # context 'An ActiveNode class'
 
   context 'An ActiveRecord::Base class' do
 

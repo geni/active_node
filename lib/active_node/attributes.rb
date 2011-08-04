@@ -26,7 +26,7 @@ module ActiveNode
         node_id = next_node_id
 
         if ar_class
-          ar_class.class_eval do
+          ar_instance = ar_class.class_eval do
             create!(attrs.merge(node_id_column => node_id))
           end
         end
@@ -34,6 +34,10 @@ module ActiveNode
         response = write_graph('add', attrs_in_schema(attrs.merge(:id => node_id)), params)
         node     = init(node_id)
         node.after_add(response)
+
+        node.instance_variable_set(:@ar_instance, ar_instance)
+        ar_instance.instance_variable_set(:@node, node)
+
         node
       end
 
@@ -159,9 +163,9 @@ module ActiveNode
         attrs    = modify_update_attrs(attrs)
         params   = attrs.delete(:active_node_params) || {}
         response = write_graph('update', self.class.attrs_in_schema(attrs), params)
+
         if self.class.ar_class
-          record = self.class.ar_class.find_by_node_id(node_id)
-          record.update_attributes!(attrs)
+          ar_instance.update_attributes!(attrs)
         end
 
         reset

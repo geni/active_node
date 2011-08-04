@@ -9,8 +9,23 @@ module ActiveNode::ActiveRecord
     @ar_class.send(:include, InstanceMethods)
 
     define_method :ar_instance do
-      @ar_instance ||= self.class.ar_class.find_by_node_id(node_number)
+      if @ar_instance.nil?
+        @ar_instance = find_ar_instance || new_ar_instance
+        @ar_instance.instance_variable_set(:@node, self)
+      end
+      @ar_instance
     end
+
+
+    define_method :find_ar_instance do
+      self.class.ar_class.find_by_node_id(node_number)
+    end
+    private :find_ar_instance
+
+    define_method :new_ar_instance do
+      self.class.ar_class.new(:node_id => node_number)
+    end
+    private :new_ar_instance
 
     if block_given?
       @ar_class.class_eval(&block)
@@ -47,6 +62,10 @@ module ActiveNode::ActiveRecord
   end # module ClassMethods
 
   module InstanceMethods
+
+    def node
+      @node
+    end
 
     def init_lazy_attributes
       lazy_attrs = LazyHash.new { node_collection.layer_data(node_id, :active_record).dup }
