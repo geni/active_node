@@ -32,11 +32,14 @@ class ActiveRecordTest < Test::Unit::TestCase
         ar_class = Person.ar_class
         ar_class.stubs(:table_exists? => false, :columns => [])
         assert_equal 'instance', ar_class.new.foo, 'instance method should be defined'
-        assert_equal 'class', ar_class.foo, 'class method should be defined'
+        assert_equal 'class',    ar_class.foo,     'class method should be defined'
+
+        assert_equal ActiveRecordTest::Person::ActiveRecord,   ar_class
+        assert_equal 'ActiveRecordTest::Person::ActiveRecord', ar_class.name
       end
 
     end
-    
+
   end
 
   context 'An ActiveRecord::Base class' do
@@ -47,7 +50,7 @@ class ActiveRecordTest < Test::Unit::TestCase
         active_node
       end
 
-      should 'add find_by_node_id method' do 
+      should 'add find_by_node_id method' do
         ArPerson.stubs(:table_exists? => false, :columns => [])
         assert_equal true, ArPerson.methods.include?('find_by_node_id')
       end

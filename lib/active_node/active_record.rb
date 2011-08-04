@@ -2,6 +2,7 @@ module ActiveNode::ActiveRecord
 
   def active_record(table_name, opts={}, &block)
     @ar_class = Class.new(ActiveRecord::Base)
+    self.const_set("ActiveRecord", @ar_class)
     @ar_class.set_table_name(table_name)
     @ar_class.set_inheritance_column(:_disabled)
     @ar_class.send(:extend,  ClassMethods)
