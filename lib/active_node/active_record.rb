@@ -47,7 +47,7 @@ module ActiveNode::ActiveRecord
   module InstanceMethods
 
     def init_lazy_attributes
-      lazy_attrs = LazyHash.new { node_coll.layer_data(node_id, :active_record).dup }
+      lazy_attrs = LazyHash.new { node_collection.layer_data(node_id, :active_record).dup }
       instance_variable_set(:@attributes, lazy_attrs)
       instance_variable_set(:@new_record, false)
     end
