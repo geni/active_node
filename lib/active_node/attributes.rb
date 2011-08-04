@@ -14,7 +14,7 @@ module ActiveNode
             layers.each do |layer, meta|
               @schema[attr] ||= {}
               @schema[attr][layer] = meta.merge(:contained => true)
-            end
+            end if layers.kind_of?(Hash)
           end if node_container_class
         end
         @schema
@@ -62,10 +62,18 @@ module ActiveNode
           layer = (args.first || default_layer).to_s
           raise "attr #{attr} does not exist on layer #{layer}" unless schema = self.class.schema[attr][layer]
 
-          if schema[:contained]
-            node_container.layer_data(layer)[node_type.to_s][attr]
+          data = if schema[:contained]
+            node_container.layer_data(layer)[node_type.to_s]
           else
-            layer_data(layer)[attr]
+            layer_data(layer)
+          end
+
+          return unless data
+
+          if klass = schema['class']
+            klass.constantize.new(data[attr])
+          else
+            data[attr]
           end
         end
 

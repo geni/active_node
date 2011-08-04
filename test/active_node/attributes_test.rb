@@ -10,6 +10,13 @@ class Person < ActiveNode::Base
   contains :birth
 end
 
+require 'date'
+class MyDate < Date
+  def self.new(string)
+    Date.parse(string)
+  end
+end
+
 class AttributesTest < Test::Unit::TestCase
 
   def setup
@@ -39,9 +46,7 @@ class AttributesTest < Test::Unit::TestCase
 
   def person_birth_schema
     {
-      'day'   => {'events' => {'type' => 'int'}},
-      'month' => {'events' => {'type' => 'int'}},
-      'year'  => {'events' => {'type' => 'int'}},
+      'date' => {'events' => {'class' => 'MyDate'}},
     }
   end
 
@@ -323,7 +328,11 @@ class AttributesTest < Test::Unit::TestCase
 
       person_data = [{
         'id'  => 'person-1',
-        'events' => {'birth' => {'day' => 1, 'month' => 1, 'year' => 2001}},
+        'events' => {
+          'birth' => {
+            'date' => '2001-01-01',
+          },
+        },
         'revision' => 43,
       }]
       birth_data =[{
@@ -338,9 +347,9 @@ class AttributesTest < Test::Unit::TestCase
           p = Person.init('person-1')
           assert_equal Birth,     p.birth.class
           assert_equal 'birth-1', p.birth.node_id
-          assert_equal 1,         p.birth.day
-          assert_equal 1,         p.birth.month
-          assert_equal 2001,      p.birth.year
+          assert_equal 1,         p.birth.dateday
+          assert_equal 1,         p.birth.date.month
+          assert_equal 2001,      p.birth.date.year
           assert_equal 'foo',     p.birth.description
         end
       end
@@ -351,9 +360,9 @@ class AttributesTest < Test::Unit::TestCase
           b = Birth.init('birth-1')
           assert_equal Birth,     b.class
           assert_equal 'birth-1', b.node_id
-          assert_equal 1,         b.day
-          assert_equal 1,         b.month
-          assert_equal 2001,      b.year
+          assert_equal 1,         b.date.day
+          assert_equal 1,         b.date.month
+          assert_equal 2001,      b.date.year
           assert_equal 'foo',     b.description
         end
       end
