@@ -347,7 +347,7 @@ class AttributesTest < Test::Unit::TestCase
           p = Person.init('person-1')
           assert_equal Birth,     p.birth.class
           assert_equal 'birth-1', p.birth.node_id
-          assert_equal 1,         p.birth.dateday
+          assert_equal 1,         p.birth.date.day
           assert_equal 1,         p.birth.date.month
           assert_equal 2001,      p.birth.date.year
           assert_equal 'foo',     p.birth.description
