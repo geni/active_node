@@ -1,4 +1,19 @@
 class ActiveNode::Base
+
+  def self._load(str)
+    node_id = Marshal.load(str)
+    raise DumperException, 'invalid format' unless node_id.kind_of?(String)
+    node_class(node_id).init(node_id) 
+  end
+
+  def _dump(ignored)
+    Marshal.dump(node_id)
+  end
+
+  def ==(other)
+    self.class == other.class and node_id == other.node_id
+  end
+
   module ClassMethods
     def node_type(type = nil)
       return if self == ActiveNode::Base
@@ -93,11 +108,6 @@ class ActiveNode::Base
       {}
     end
 
-    def _load(str)
-      node_id = Marshal.load(str)
-      raise DumperException, 'invalid format' unless node_id.kind_of?(String)
-      node_class(node_id).init(node_id) 
-    end
   end # module ClassMethods
 
   module InstanceMethods
@@ -124,12 +134,5 @@ class ActiveNode::Base
       self.class.write_graph(path, data, opts)
     end
 
-    def _dump(ignored)
-      Marshal.dump(node_id)
-    end
-
-    def ==(other)
-      self.class == other.class and node_id == other.node_id
-    end
   end # module InstanceMethods
 end
