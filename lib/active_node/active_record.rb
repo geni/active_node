@@ -3,15 +3,16 @@ module ActiveNode::ActiveRecord
   def active_record(table_name, opts={}, &block)
     @ar_class = Class.new(ActiveRecord::Base)
     @ar_class.set_table_name(table_name)
+    @ar_class.set_inheritance_column(:_disabled)
     @ar_class.send(:extend,  ClassMethods)
     @ar_class.send(:include, InstanceMethods)
 
-    if block_given?
-      @ar_class.class_eval(&block)
-    end
-
     define_method :ar_instance do
       @ar_instance ||= self.class.ar_class.find_by_node_id(node_number)
+    end
+
+    if block_given?
+      @ar_class.class_eval(&block)
     end
   end
 
