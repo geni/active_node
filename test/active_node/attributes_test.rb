@@ -179,20 +179,17 @@ class AttributesTest < Test::Unit::TestCase
 
   context "An ActiveNode model" do
     context 'update!' do
+
       should 'update attributes' do
 
-        schema = {
-          'string'  => {'foo' => {'type' => 'string'}},
-          'int'     => {'foo' => {'type' => 'int'}},
-        }
         data = [{
           'id'  => 'person-1',
-          'foo' => {
+          'a' => {
             'int' => 42,
           },
         }]
 
-        mock_active_node(schema, {}, data) do |server|
+        mock_active_node(person_schema, {}, data) do |server|
           person = Person.init('person-1')
           person.update!({:string => 'new', :int => 42, :bad => 'ignore'})
 
@@ -222,7 +219,8 @@ class AttributesTest < Test::Unit::TestCase
           Person.init('person-1').update!(:string => 'one')
         end
       end
-    end
+
+    end # context 'update!'
 
     should 'fetch layer data' do
       p = Person.init('person-42')
