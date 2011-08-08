@@ -22,7 +22,7 @@ module ActiveNode
 
       def add!(attrs)
         attrs   = modify_add_attrs(attrs)
-        params  = attrs.delete(:active_node_params) || {}
+        params  = attrs.meta[:active_node_params] || {}
         node_id = next_node_id
 
         if ar_class
@@ -161,7 +161,7 @@ module ActiveNode
 
       def update!(attrs)
         attrs    = modify_update_attrs(attrs)
-        params   = attrs.delete(:active_node_params) || {}
+        params   = attrs.meta[:active_node_params] || {}
         response = write_graph('update', self.class.attrs_in_schema(attrs), params)
 
         if self.class.ar_class

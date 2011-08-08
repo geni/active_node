@@ -1,3 +1,5 @@
+require 'rupture'
+
 module ActiveNode
   class Error < StandardError
     attr_accessor :cause
