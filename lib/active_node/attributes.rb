@@ -25,6 +25,11 @@ module ActiveNode
         params  = attrs.meta[:active_node_params] || {}
         node_id = next_node_id
 
+        contained_types.each do |type, klass|
+          next unless sub_attrs = attrs[type]
+          attrs[type] = klass.modify_add_attrs(sub_attrs)
+        end
+
         if ar_class
           ar_instance = ar_class.class_eval do
             create!(attrs.merge(node_id_column => node_id))
@@ -89,22 +94,33 @@ module ActiveNode
       end
 
       def attrs_in_schema(attrs)
-        attrs.reject do |key, value|
+        attrs = attrs.reject do |key, value|
           key = key.to_s
           key != "id" and not schema.include?(key)
         end
+
+        contained_types.each do |type, klass|
+          next unless sub_attrs = attrs[type]
+          attrs[type] = klass.attrs_in_schema(sub_attrs)
+        end
+
+        attrs
+      end
+
+      def modify_attrs(attrs)
+        # By default this is called by modify_add_attrs and modify_update_attrs.
+        attrs
       end
 
       def modify_add_attrs(attrs)
         # Called before add! is executed to modify attrs being passed in.
-        attrs
+        modify_attrs(attrs)
       end
 
       def contains(*types)
         types.each do |type|
-          contained_types << type
-
           klass = type.to_s.classify.constantize
+          contained_types[type] = klass
           klass.contained_by(:type => node_type, :class => self)
 
           define_method(type) do
@@ -115,7 +131,7 @@ module ActiveNode
       end
 
       def contained_types
-        @contained_types ||= [].to_set
+        @contained_types ||= {}
       end
 
       attr_reader :contained_by_class
@@ -159,9 +175,23 @@ module ActiveNode
         @node_container ||= self.class.node_container_class.init(node_container_id)
       end
 
+      def contained_nodes
+        @contained_nodes ||= {}
+        self.class.contained_types.each do |type, klass|
+          @contained_nodes[type] ||= send(type)
+        end
+        @contained_nodes
+      end
+
       def update!(attrs)
-        attrs    = modify_update_attrs(attrs)
-        params   = attrs.meta[:active_node_params] || {}
+        attrs  = modify_update_attrs(attrs)
+        params = attrs.meta[:active_node_params] || {}
+
+        contained_nodes.each do |type, node|
+          next unless sub_attrs = attrs[type]
+          attrs[type] = node.modify_update_attrs(sub_attrs)
+        end
+
         response = write_graph('update', self.class.attrs_in_schema(attrs), params)
 
         if self.class.ar_class
@@ -175,7 +205,7 @@ module ActiveNode
 
       def modify_update_attrs(attrs)
         # Called before update! is executed to modify attrs being passed in.
-        attrs
+        self.class.modify_attrs(attrs)
       end
 
       def after_update(response)
