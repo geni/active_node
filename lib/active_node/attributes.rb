@@ -21,14 +21,19 @@ module ActiveNode
       end
 
       def add!(attrs)
-        return self unless attrs = modify_add_attrs(attrs)
+        attrs   = modify_add_attrs(attrs)
         params  = attrs.meta[:active_node_params] || {}
         node_id = next_node_id
 
         contained_classes.each do |type, klass|
           next unless sub_attrs = attrs[type]
-          attrs[type] = klass.modify_add_attrs(sub_attrs)
-        end
+          if sub_attrs = klass.modify_add_attrs(sub_attrs)
+            attrs[type] = sub_attrs
+          else
+            attrs.delete(type)
+          end
+        end if attrs
+        return self if attrs.nil? or attrs.empty?
 
         if ar_class
           ar_instance = ar_class.class_eval do
@@ -138,13 +143,19 @@ module ActiveNode
       end
 
       def update!(attrs)
-        return self unless attrs = modify_update_attrs(attrs)
+        attrs  = modify_update_attrs(attrs)
         params = attrs.meta[:active_node_params] || {}
 
         contained_nodes.each do |type, node|
           next unless sub_attrs = attrs[type]
-          attrs[type] = node.modify_update_attrs(sub_attrs)
-        end
+          if sub_attrs = node.modify_update_attrs(sub_attrs)
+            attrs[type] = sub_attrs
+          else
+            attrs.delete(type)
+          end
+        end if attrs
+        return self if attrs.nil? or attrs.empty?
+
         response = write_graph('update', self.class.attrs_in_schema(attrs), params)
 
         if self.class.ar_class

@@ -366,7 +366,14 @@ class AttributesTest < Test::Unit::TestCase
       end
     end # context 'contains birth'
 
-    context 'contains_type?' do
+    context 'contains?' do
+
+      should 'accept a String parameter' do
+        mock_active_node(person_schema) do
+          assert_equal true, Person.init('person-1').contains_type?('birth')
+        end
+      end
+
       should 'return true if type is contained' do
         mock_active_node(person_schema) do
           assert_equal true, Person.init('person-1').contains_type?(:birth)

@@ -19,11 +19,11 @@ module ActiveNode
       end
 
       def contained_class(type)
-        contained_classes[type]
+        contained_classes[type.to_sym]
       end
 
       def contains_type?(type)
-        contained_classes.has_key?(type)
+        contained_classes.has_key?(type.to_sym)
       end
 
       attr_reader :contained_by_class
@@ -60,13 +60,14 @@ module ActiveNode
       end
 
       def contained_node(type)
+        type = type.to_sym
         return unless klass = self.class.contained_class(type)
         @contained_nodes ||= {}
         @contained_nodes[type] ||= klass.init("#{type}-#{node_number}", :container => self)
       end
 
       def contains_type?(type)
-        self.class.contains_type?(type)
+        self.class.contains_type?(type.to_sym)
       end
 
     end # module InstanceMethods
