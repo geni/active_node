@@ -183,6 +183,10 @@ module ActiveNode
         @contained_nodes
       end
 
+      def contained_node?(key)
+        contained_nodes.keys.include?(key.to_sym)
+      end
+
       def update!(attrs)
         return self unless attrs = modify_update_attrs(attrs)
         params = attrs.meta[:active_node_params] || {}

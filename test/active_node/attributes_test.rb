@@ -365,5 +365,34 @@ class AttributesTest < Test::Unit::TestCase
         end
       end
     end # context 'contains birth'
-  end
+
+    context 'contained_node?' do
+
+      should 'accept a String parameter' do
+        mock_active_node(person_schema) do
+          assert_equal true, Person.init('person-1').contained_node?('birth')
+        end
+      end
+
+      should 'accept a Symbol parameter' do
+        mock_active_node(person_schema) do
+          assert_equal true, Person.init('person-1').contained_node?(:birth)
+        end
+      end
+
+      should 'return true if node is contained' do
+        mock_active_node(person_schema) do
+          assert_equal true, Person.init('person-1').contained_node?('birth')
+        end
+      end
+
+      should 'return false if the node is not contained' do
+        mock_active_node(person_schema) do
+          assert_equal false, Person.init('person-1').contained_node?('bar')
+        end
+      end
+
+    end # context 'contained_node?'
+
+  end # context 'An ActiveNode model'
 end
