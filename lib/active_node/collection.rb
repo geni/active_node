@@ -16,7 +16,7 @@ module ActiveNode
         @node_ids = ids_or_uri.to_ordered_set.freeze
         @meta     = opts_or_meta.freeze
       end
-      reset
+      clear_cache
     end
 
     def assoc(opts)
@@ -57,15 +57,13 @@ module ActiveNode
       @layer_revisions[node_id][layer]
     end
 
-    def reset(node_id = nil)
-      if node_id
-        @layer_data.delete(node_id)
-        @layer_revisions.delete(node_id)
-      else
-        @layer_data       = Hash.deep(2)
-        @layer_revisions  = Hash.deep(1)
-        @current_revision = nil
-      end
+    def reset_current_revision
+      @current_revision = nil
+    end
+
+    def clear_cache
+      @layer_data      = Hash.deep(2)
+      @layer_revisions = Hash.deep(1)
     end
 
     def each
@@ -190,7 +188,7 @@ module ActiveNode
 
       def reset
         @attributes.reset if @attributes
-        node_collection.reset(node_id)
+        node_collection.reset_current_revision
       end
 
       def layer_data(layer, revision = self.class.revision)

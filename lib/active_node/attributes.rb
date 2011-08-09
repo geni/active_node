@@ -21,7 +21,7 @@ module ActiveNode
       end
 
       def add!(attrs)
-        attrs   = modify_add_attrs(attrs)
+        return self unless attrs = modify_add_attrs(attrs)
         params  = attrs.meta[:active_node_params] || {}
         node_id = next_node_id
 
@@ -184,14 +184,13 @@ module ActiveNode
       end
 
       def update!(attrs)
-        attrs  = modify_update_attrs(attrs)
+        return self unless attrs = modify_update_attrs(attrs)
         params = attrs.meta[:active_node_params] || {}
 
         contained_nodes.each do |type, node|
           next unless sub_attrs = attrs[type]
           attrs[type] = node.modify_update_attrs(sub_attrs)
         end
-
         response = write_graph('update', self.class.attrs_in_schema(attrs), params)
 
         if self.class.ar_class
