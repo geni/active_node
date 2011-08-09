@@ -25,7 +25,7 @@ module ActiveNode
         params  = attrs.meta[:active_node_params] || {}
         node_id = next_node_id
 
-        contained_types.each do |type, klass|
+        contained_classes.each do |type, klass|
           next unless sub_attrs = attrs[type]
           attrs[type] = klass.modify_add_attrs(sub_attrs)
         end
@@ -99,7 +99,7 @@ module ActiveNode
           key != "id" and not schema.include?(key)
         end
 
-        contained_types.each do |type, klass|
+        contained_classes.each do |type, klass|
           next unless sub_attrs = attrs[type]
           attrs[type] = klass.attrs_in_schema(sub_attrs)
         end

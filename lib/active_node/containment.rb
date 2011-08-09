@@ -5,7 +5,7 @@ module ActiveNode
       def contains(*types)
         types.each do |type|
           klass = type.to_s.classify.constantize
-          contained_types[type] = klass
+          contained_classes[type] = klass
           klass.contained_by(:type => node_type, :class => self)
 
           define_method(type) do
@@ -14,8 +14,16 @@ module ActiveNode
         end
       end
 
-      def contained_types
-        @contained_types ||= {}
+      def contained_classes
+        @contained_classes ||= {}
+      end
+
+      def contained_class(type)
+        contained_classes[type]
+      end
+
+      def contains_type?(type)
+        contained_classes.has_key?(type)
       end
 
       attr_reader :contained_by_class
@@ -45,20 +53,20 @@ module ActiveNode
 
       def contained_nodes
         @contained_nodes ||= {}
-        self.class.contained_types.each do |type, klass|
+        self.class.contained_classes.each do |type, klass|
           @contained_nodes[type] ||= contained_node(type)
         end
         @contained_nodes
       end
 
       def contained_node(type)
-        return unless klass = self.class.contained_types[type]
+        return unless klass = self.class.contained_class(type)
         @contained_nodes ||= {}
         @contained_nodes[type] ||= klass.init("#{type}-#{node_number}", :container => self)
       end
 
-      def contained_node?(type)
-        self.class.contained_types.include?(type)
+      def contains_type?(type)
+        self.class.contains_type?(type)
       end
 
     end # module InstanceMethods
