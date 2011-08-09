@@ -88,6 +88,7 @@ end
 
 require 'active_node/base'
 require 'active_node/server'
+require 'active_node/containment'
 require 'active_node/attributes'
 require 'active_node/collection'
 require 'active_node/active_record'
@@ -102,7 +103,10 @@ class Class
     include ActiveNode::Collection::InstanceMethods
 
     if opts[:attributes]
+      extend  ActiveNode::Containment::ClassMethods
       extend  ActiveNode::Attributes::ClassMethods
+
+      include ActiveNode::Containment::InstanceMethods
       include ActiveNode::Attributes::InstanceMethods
     end
 
