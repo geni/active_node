@@ -148,10 +148,11 @@ module ActiveNode
 
         contained_nodes.each do |type, node|
           next unless sub_attrs = attrs[type]
-          if sub_attrs = node.modify_update_attrs(sub_attrs)
-            attrs[type] = sub_attrs
-          else
+          sub_attrs = node.modify_update_attrs(sub_attrs)
+          if sub_attrs.blank? || sub_attrs.empty?
             attrs.delete(type)
+          else
+            attrs[type] = sub_attrs
           end
         end if attrs
         return self if attrs.nil? or attrs.empty?
