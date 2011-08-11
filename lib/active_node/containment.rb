@@ -19,6 +19,7 @@ module ActiveNode
       end
 
       def contained_class(type)
+        raise ArgumentError, 'Type cannot be nil' unless type
         contained_classes[type.to_sym]
       end
 
@@ -27,10 +28,10 @@ module ActiveNode
       end
 
       def contains_type?(type)
+        raise ArgumentError, 'Type cannot be nil' unless type
         contained_classes.has_key?(type.to_sym)
       end
 
-      attr_reader :contained_by_class
       def contained_by(opts = nil)
         return @contained_by unless opts
         @contained_by = opts
@@ -64,6 +65,7 @@ module ActiveNode
       end
 
       def contained_node(type)
+        raise ArgumentError, 'Type cannot be nil' unless type
         type = type.to_sym
         return unless klass = self.class.contained_class(type)
         @contained_nodes ||= {}
@@ -71,6 +73,7 @@ module ActiveNode
       end
 
       def contains_type?(type)
+        raise ArgumentError, 'Type cannot be nil' unless type
         self.class.contains_type?(type.to_sym)
       end
 
