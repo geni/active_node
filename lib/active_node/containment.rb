@@ -22,6 +22,10 @@ module ActiveNode
         contained_classes[type.to_sym]
       end
 
+      def contained_types
+        contained_classes.keys
+      end
+
       def contains_type?(type)
         contained_classes.has_key?(type.to_sym)
       end
