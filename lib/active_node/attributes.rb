@@ -157,14 +157,15 @@ module ActiveNode
         end if attrs
         return self if attrs.nil? or attrs.empty?
 
-        response = write_graph('update', self.class.attrs_in_schema(attrs), params)
+        schema_attrs = self.class.attrs_in_schema(attrs)
+        response = write_graph('update', schema_attrs, params) unless schema_attrs.empty?
 
         if self.class.ar_class
           ar_instance.update_attributes!(attrs)
         end
 
         reset
-        after_update(response)
+        after_update(response) if response
         self
       end
 
