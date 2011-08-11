@@ -16,6 +16,7 @@ module ActiveNode
         @node_ids = ids_or_uri.to_ordered_set.freeze
         @meta     = opts_or_meta.freeze
       end
+      @nodes = {}
       clear_cache
     end
 
@@ -68,18 +69,28 @@ module ActiveNode
 
     def each
       node_ids.each do |node_id|
-        yield ActiveNode.init(node_id, :collection => self)
+        yield @nodes[node_id] ||= ActiveNode.init(node_id, :collection => self)
       end
     end
 
     def [](index)
-      if index.kind_of?(String) and node_ids.include?(index)
-        ActiveNode.init(index, :collection => self)
+      if index.kind_of?(String)
+        raise ArgumentError, "#{index} not in collection" unless node_ids.include?(index)
+        node_id = index
       elsif index.kind_of?(Integer)
-        ActiveNode.init(node_ids[index], :collection => self)
+        node_id = node_ids[index]
       else
         raise ArgumentError, "String or Integer required as index for []"
       end
+      @nodes[node_id] ||= ActiveNode.init(node_id, :collection => self)
+    end
+
+    def first
+      self[0]
+    end
+
+    def last
+      self[-1]
     end
 
     def include?(node_or_id)
@@ -144,7 +155,7 @@ module ActiveNode
 
     module ClassMethods
 
-      ASSOCIATIONS = [:edges, :incoming, :walk]
+      ASSOCIATIONS = [:edge, :edges, :incoming, :walk]
       def has(name, opts = {})
         associations = ASSOCIATIONS.select {|k| opts[k]}.compact
         raise ArgumentError, "exactly one of #{ASSOCIATIONS.join(', ')} required in has_many" unless associations.size == 1
@@ -152,14 +163,13 @@ module ActiveNode
         type     = associations.first
         path     = opts.delete(type).to_s.gsub(/_/, '-')
         defaults = opts.merge(Collection.revision_opts(@revision)).freeze
-        cache    = {}
 
         define_method(name) do |*args|
           raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" if args.size > 1
           opts = args.first || {}
 
-          cache[opts] ||= case type
-          when :edges then
+          has_cache[name][opts] ||= case type
+          when :edges, :edge then
             ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", defaults.merge(opts)) do |data|
               {'node_ids' => data[path]['edges'].keys.sort, 'meta' => data[path]['edges']}
             end
@@ -170,13 +180,18 @@ module ActiveNode
           when :walk then
             ActiveNode::Collection.new("/#{self.node_id}/#{path}", defaults.merge(opts))
           end
+
+          if type == :edge
+            has_cache[name][opts].first
+          else
+            has_cache[name][opts]
+          end
         end
       end
 
     end # ClassMethods
 
     module InstanceMethods
-
       def node_collection
         @node_collection ||= ActiveNode::Collection.new([node_id])
       end
@@ -188,6 +203,7 @@ module ActiveNode
 
       def reset
         @attributes.reset if @attributes
+        @_has_cache = nil
         node_collection.reset_current_revision
       end
 
@@ -210,6 +226,12 @@ module ActiveNode
 
       def fetch_layer_revisions(layers)
         node_collection.fetch_layer_revisions(node_type, layers)
+      end
+
+    private
+
+      def has_cache
+        @_has_cache ||= Hash.deep(1)
       end
 
     end # InstanceMethods
