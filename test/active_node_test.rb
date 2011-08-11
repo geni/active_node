@@ -30,6 +30,29 @@ class ActiveNodeTest < Test::Unit::TestCase
       assert_equal Person.init('person-42'), ActiveNode::Base._load(Marshal.dump('person-42'))
     end
 
+    context 'node_type method' do
+
+      should 'set node type' do
+        foo = Class.new(ActiveNode::Base)
+        foo.node_type('bar')
+        assert_equal 'bar', foo.node_type
+      end
+
+      should 'return the default node_type' do
+        Object.const_set('Foo',  Class.new(ActiveNode::Base))
+        assert_equal 'foo', Foo.node_type
+      end
+
+    end # context 'node_type method'
+
+    context 'headers method' do
+
+      should 'return empty hash by default' do
+        assert_equal({}, Person.headers)
+      end
+
+    end # context 'headers method'
+
   end # context 'An ActiveNode class'
 
   context 'An ActiveNode instance' do
