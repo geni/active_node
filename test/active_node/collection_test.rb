@@ -1,6 +1,7 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class Person < ActiveNode::Base
+  has :best_friend,  :edge     => :best_friend
   has :friends,      :edges    => :friends
   has :aquaintences, :walk     => :friends_of_friends
   has :followers,    :incoming => :followed
@@ -90,6 +91,15 @@ class CollectionTest < Test::Unit::TestCase
         assert_equal({"foo"=>[1, 2, 3],    "bar"=>[3, 4, 5]},    p[1].revisions(['foo', 'bar']))
       end
     end
-  end
+
+    should 'not fail when no data is returned' do
+      mock_active_node({}) do |server|
+        assert_equal nil, Person.init(1).best_friend
+        assert_equal [],  Person.init(1).friends.to_a
+        assert_equal [],  Person.init(1).followers.to_a
+      end
+    end
+
+  end # context 'ActiveNode collection'
 
 end # class CollectionTest

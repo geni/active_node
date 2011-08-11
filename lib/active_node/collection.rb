@@ -73,6 +73,10 @@ module ActiveNode
       end
     end
 
+    def size
+      node_ids.size
+    end
+
     def [](index)
       if index.kind_of?(String)
         raise ArgumentError, "#{index} not in collection" unless node_ids.include?(index)
@@ -171,10 +175,12 @@ module ActiveNode
           has_cache[name][opts] ||= case type
           when :edges, :edge then
             ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", defaults.merge(opts)) do |data|
+              data[path] ||= {'edges' => {}}
               {'node_ids' => data[path]['edges'].keys.sort, 'meta' => data[path]['edges']}
             end
           when :incoming then
             ActiveNode::Collection.new("/#{self.node_id}/incoming/#{path}", defaults.merge(opts)) do |data|
+              data[path] ||= {'incoming' => []}
               {'node_ids' => data[path]['incoming']}
             end
           when :walk then
