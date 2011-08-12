@@ -3,7 +3,9 @@ module ActiveNode
     module ClassMethods
 
       def reset
-        @schema = nil
+        attr_methods.each {|attr| remove_method(attr)}
+        @attr_methods = nil
+        @schema       = nil
       end
 
       def schema
@@ -16,8 +18,14 @@ module ActiveNode
               @schema[attr][layer] = meta.merge(:contained => true)
             end if layers.kind_of?(Hash)
           end if node_container_class
+
+          @schema.deep_symbolize_keys!
         end
         @schema
+      end
+
+      def attr_methods
+        @attr_methods ||= []
       end
 
       def add!(attrs)
@@ -52,56 +60,45 @@ module ActiveNode
       end
 
       def layer_attrs(attr_to_layer)
-        attr_to_layer.each do |attr, layer|
-          layer_attr attr, layer
+        attr_to_layer.each do |attr, opts|
+          layer_attr attr, opts
         end
       end
 
-      def layer_attr(attr, default_layer = nil, opts = {})
-        attr = attr.to_s
+      def attr_meta(attr, opts = {})
+        layers = schema[attr]  || (raise ArgumentError, "attr #{attr} does not exist in schema")
+        layer  = opts[:layer]  || (layers.keys.first if layers.size == 1)
+        meta   = layers[layer]
 
-        if default_layer
-          type = opts[:type]
-        else
-          raise "cannot create reader for attr #{attr} not in schema" unless attr_schema = schema[attr]
-          if attr_schema.size == 1
-            default_layer = attr_schema.keys.first
-            type          = attr_schema.values.first['type']
-          end
-        end
-        default_layer = default_layer.to_s  if default_layer
+        meta.merge(opts).merge(:layer => layer) if meta
+      end
+
+      def layer_attr(attr, opts = {})
+        meta = attr_meta(attr, opts)
 
         define_method(attr) do |*args|
-          raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" unless default_layer or args.size == 1
-          layer = (args.first || default_layer).to_s
-          raise "attr #{attr} does not exist on layer #{layer}" unless schema = self.class.schema[attr][layer]
-
-          data = if schema[:contained]
-            node_container.layer_data(layer)[node_type.to_s]
+          raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" unless meta or args.size == 1
+          if args.empty?
+            get_attr(attr, meta)
           else
-            layer_data(layer)
-          end
-
-          return unless data
-
-          if klass = schema['class']
-            klass.constantize.new(data[attr])
-          else
-            data[attr]
+            get_attr(attr, args.first)
           end
         end
+        attr_methods << attr
 
-        if default_layer and 'boolean' == type.to_s
-          define_method("#{attr}?") do
-            !!layer_data(default_layer)[attr]
+        if meta and 'boolean' == meta[:type].to_s
+          name = "#{attr}?"
+          define_method(name) do
+            !!layer_data(meta[:layer])[attr]
           end
+          attr_methods << name
         end
       end
 
       def attrs_in_schema(attrs)
         attrs = attrs.reject do |key, value|
-          key = key.to_s
-          key != "id" and not schema.include?(key)
+          key = key.to_sym
+          key != :id and not schema.include?(key)
         end
 
         contained_classes.each do |type, klass|
@@ -133,12 +130,33 @@ module ActiveNode
     module InstanceMethods
 
       def method_missing(name, *args)
-        attr = name.to_s.sub(/[\?]?$/, '')
+        attr = name.to_s.sub(/[\?]?$/, '').to_sym
         if self.class.schema.keys.include?(attr)
           self.class.layer_attr(attr)
           send(name, *args)
         else
           super
+        end
+      end
+
+      def get_attr(attr, meta = {})
+        meta  = self.class.attr_meta(attr, :layer => meta) if meta.kind_of?(Symbol)
+        meta  = self.class.attr_meta(attr, meta)           if meta[:layer].nil?
+        layer = meta[:layer]
+
+        if meta[:contained]
+          data = node_container.layer_data(layer)[node_type]
+        else
+          data = layer_data(layer)
+        end
+        return unless data
+
+        attr = attr.to_s
+        if klass = meta[:class]
+          return data[attr].to_sym if klass == 'Symbol'
+          klass.constantize.new(data[attr])
+        else
+          data[attr]
         end
       end
 

@@ -159,20 +159,24 @@ module ActiveNode
 
     module ClassMethods
 
-      ASSOCIATIONS = [:edge, :edges, :incoming, :walk]
+      ASSOCIATIONS = [:attr, :edge, :edges, :incoming, :walk]
       def has(name, opts = {})
         associations = ASSOCIATIONS.select {|k| opts[k]}.compact
-        raise ArgumentError, "exactly one of #{ASSOCIATIONS.join(', ')} required in has" unless associations.size == 1
+        raise ArgumentError, "only one of #{ASSOCIATIONS.join(', ')} required in has" if associations.size > 1
 
-        type     = associations.first
-        path     = opts.delete(type).to_s.gsub(/_/, '-')
-        defaults = opts.merge(Collection.revision_opts(@revision)).freeze
+        type     = associations.first || :attr
+        path     = opts.delete(type)
+        path     = path.to_s.gsub(/_/, '-') unless :attr == type
+        defaults = opts.freeze
 
         define_method(name) do |*args|
           raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" if args.size > 1
           opts = args.first || {}
 
           has_cache[name][opts] ||= case type
+
+            when :attr then
+              ActiveNode::Collection.new([get_attr(path || name, defaults)])
 
             when :edges, :edge then
               ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", defaults.merge(opts)) do |data|
@@ -191,7 +195,7 @@ module ActiveNode
 
           end
 
-          if type == :edge
+          if [:edge, :attr].include?(type)
             has_cache[name][opts].first
           else
             has_cache[name][opts]

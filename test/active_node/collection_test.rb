@@ -5,9 +5,15 @@ class Person < ActiveNode::Base
   has :friends,      :edges    => :friends
   has :aquaintences, :walk     => :friends_of_friends
   has :followers,    :incoming => :followed
+  has :mentor
+  has :deity, :attr => :god
 end
 
 class CollectionTest < Test::Unit::TestCase
+  def setup
+    Person.reset
+  end
+
   context 'An ActiveNode class' do
     context 'has class macro' do
       # has :friends, :edges => :friends
@@ -51,7 +57,7 @@ class CollectionTest < Test::Unit::TestCase
         end
       end
 
-      # has_many :followers, :incoming => :followed
+      # has :followers, :incoming => :followed
       should 'create collection using incoming edges' do
         node_ids = [ "person-1", "person-8" ]
 
@@ -66,6 +72,28 @@ class CollectionTest < Test::Unit::TestCase
 
           assert_equal :read,                          req[:method]
           assert_equal '/person-42/incoming/followed', req[:path]
+        end
+      end
+
+      schema = {
+        'mentor' => {'a' => {}},
+        'god'    => {'a' => {}}
+      }
+      data = [{
+        'id'       => 'person-42',
+        'revision' => 1337,
+        'a'        => {'mentor' => 'person-1', 'god' => 'person-2'},
+      }]
+
+      # has :mentor
+      # has :deity, :attr => :god
+      should 'return an active node' do
+        mock_active_node(schema, data) do |server|
+          p = Person.init('person-42')
+
+          assert_equal 'person-1', p.mentor.node_id
+          assert_equal 'person-2', p.deity.node_id
+          assert_equal 'person-2', p.god
         end
       end
     end
