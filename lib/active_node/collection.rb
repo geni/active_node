@@ -162,7 +162,7 @@ module ActiveNode
       ASSOCIATIONS = [:edge, :edges, :incoming, :walk]
       def has(name, opts = {})
         associations = ASSOCIATIONS.select {|k| opts[k]}.compact
-        raise ArgumentError, "exactly one of #{ASSOCIATIONS.join(', ')} required in has_many" unless associations.size == 1
+        raise ArgumentError, "exactly one of #{ASSOCIATIONS.join(', ')} required in has" unless associations.size == 1
 
         type     = associations.first
         path     = opts.delete(type).to_s.gsub(/_/, '-')
@@ -173,18 +173,22 @@ module ActiveNode
           opts = args.first || {}
 
           has_cache[name][opts] ||= case type
-          when :edges, :edge then
-            ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", defaults.merge(opts)) do |data|
-              data[path] ||= {'edges' => {}}
-              {'node_ids' => data[path]['edges'].keys.sort, 'meta' => data[path]['edges']}
-            end
-          when :incoming then
-            ActiveNode::Collection.new("/#{self.node_id}/incoming/#{path}", defaults.merge(opts)) do |data|
-              data[path] ||= {'incoming' => []}
-              {'node_ids' => data[path]['incoming']}
-            end
-          when :walk then
-            ActiveNode::Collection.new("/#{self.node_id}/#{path}", defaults.merge(opts))
+
+            when :edges, :edge then
+              ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", defaults.merge(opts)) do |data|
+                data[path] ||= {'edges' => {}}
+                {'node_ids' => data[path]['edges'].keys.sort, 'meta' => data[path]['edges']}
+              end
+
+            when :incoming then
+              ActiveNode::Collection.new("/#{self.node_id}/incoming/#{path}", defaults.merge(opts)) do |data|
+                data[path] ||= {'incoming' => []}
+                {'node_ids' => data[path]['incoming']}
+              end
+
+            when :walk then
+              ActiveNode::Collection.new("/#{self.node_id}/#{path}", defaults.merge(opts))
+
           end
 
           if type == :edge

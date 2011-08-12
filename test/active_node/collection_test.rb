@@ -17,7 +17,6 @@ class CollectionTest < Test::Unit::TestCase
           "person-8" => {"context" => "shopzilla"},
         }
 
-        # has :friends, :edges => :friends
         mock_active_node({'friends' => {'edges' => edges}}) do |server|
           p = Person.init('person-42')
 
