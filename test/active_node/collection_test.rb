@@ -7,7 +7,10 @@ class Person < ActiveNode::Base
   has :followers,    :incoming => :followed
   has :mentor
   has :deity, :attr => :god
+  has :robots
 end
+
+class Robot < ActiveNode::Base; end
 
 class CollectionTest < Test::Unit::TestCase
   def setup
@@ -77,15 +80,19 @@ class CollectionTest < Test::Unit::TestCase
 
       schema = {
         'mentor' => {'a' => {}},
-        'god'    => {'a' => {}}
+        'god'    => {'a' => {}},
+        'robots' => {'a' => {}}
       }
       data = [{
         'id'       => 'person-42',
         'revision' => 1337,
-        'a'        => {'mentor' => 'person-1', 'god' => 'person-2'},
+        'a'        => {'mentor' => 'person-1',
+                       'god'    => 'person-2',
+                       'robots' => ['robot-1', 'robot-2']},
       }]
 
       # has :mentor
+      # has :robots
       # has :deity, :attr => :god
       should 'return an active node' do
         mock_active_node(schema, data) do |server|
@@ -94,6 +101,8 @@ class CollectionTest < Test::Unit::TestCase
           assert_equal 'person-1', p.mentor.node_id
           assert_equal 'person-2', p.deity.node_id
           assert_equal 'person-2', p.god
+
+          assert_equal ["robot-1", "robot-2"], p.robots.collect {|r| r.node_id}
         end
       end
     end

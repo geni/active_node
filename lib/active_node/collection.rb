@@ -176,7 +176,12 @@ module ActiveNode
           has_cache[name][opts] ||= case type
 
             when :attr then
-              ActiveNode::Collection.new([get_attr(path || name, defaults)])
+              attr = get_attr(path || name, defaults)
+              if attr.is_a?(Array)
+                ActiveNode::Collection.new(attr)
+              else
+                ActiveNode.init(attr)
+              end
 
             when :edges, :edge then
               ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", defaults.merge(opts)) do |data|
@@ -195,7 +200,7 @@ module ActiveNode
 
           end
 
-          if [:edge, :attr].include?(type)
+          if :edge == type
             has_cache[name][opts].first
           else
             has_cache[name][opts]
