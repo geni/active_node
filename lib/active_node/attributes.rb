@@ -89,7 +89,7 @@ module ActiveNode
         if meta and 'boolean' == meta[:type].to_s
           name = "#{attr}?"
           define_method(name) do
-            !!layer_data(meta[:layer])[attr]
+            !!send(attr)
           end
           attr_methods << name
         end
