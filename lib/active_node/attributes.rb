@@ -31,6 +31,7 @@ module ActiveNode
       def add!(attrs)
         attrs   = modify_add_attrs(attrs)
         params  = attrs.meta[:active_node_params] || {}
+        path    = attrs.meta[:active_node_path] || 'add'
         node_id = next_node_id
 
         contained_classes.each do |type, klass|
@@ -49,7 +50,8 @@ module ActiveNode
           end
         end
 
-        response = write_graph('add', attrs_in_schema(attrs.merge(:id => node_id)), params)
+        attrs    = attrs_in_schema(attrs).merge!(attrs.meta[:active_node_attrs] || {}).merge!(:id => node_id)
+        response = write_graph(path, attrs, params)
         node     = init(node_id)
         node.after_add(response)
 
@@ -98,7 +100,7 @@ module ActiveNode
       def attrs_in_schema(attrs)
         attrs = attrs.reject do |key, value|
           key = key.to_sym
-          key != :id and not schema.include?(key)
+          not schema.include?(key)
         end
 
         contained_classes.each do |type, klass|
