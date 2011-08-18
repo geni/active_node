@@ -218,6 +218,7 @@ module ActiveNode
       def meta
         node_collection.meta[node_id]
       end
+      alias edge meta
 
       def reset
         @attributes.reset if @attributes
