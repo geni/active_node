@@ -221,7 +221,7 @@ module ActiveNode
       alias edge meta
 
       def reset
-        @attributes.reset if @attributes
+        @attributes.clear if @attributes
         @_has_cache = nil
         node_collection.reset_current_revision
       end
