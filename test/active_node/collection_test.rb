@@ -19,6 +19,22 @@ class CollectionTest < Test::Unit::TestCase
 
   context 'An ActiveNode class' do
     context 'has class macro' do
+      # has :best_friend, :edge => :best_friend
+      should 'create collection using edge' do
+        mock_active_node({'best-friend' => {'edges' => {'person-1' => {'since' => 1998}}}}) do |server|
+          p = Person.init('person-42')
+
+          assert_equal 'person-1', p.best_friend.node_id
+          assert_equal 1998,       p.best_friend.meta['since']
+
+          assert_equal 1, server.requests.size
+          req = server.requests.shift
+
+          assert_equal :read,                          req[:method]
+          assert_equal '/person-42/edges/best-friend', req[:path]
+        end
+      end
+
       # has :friends, :edges => :friends
       should 'create collection using edges' do
         edges = {
