@@ -7,6 +7,10 @@ module ActiveNode
 
     attr_reader :current_revision
 
+    def self.empty
+      new([])
+    end
+
     def initialize(ids_or_uri, opts_or_meta = {}, &block)
       if ids_or_uri.kind_of?(String)
         @uri     = ids_or_uri
