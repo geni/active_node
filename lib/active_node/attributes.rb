@@ -55,8 +55,10 @@ module ActiveNode
         node     = init(node_id)
         node.after_add(response)
 
-        node.instance_variable_set(:@ar_instance, ar_instance)
-        ar_instance.instance_variable_set(:@node, node)
+        if ar_instance
+          node.instance_variable_set(:@ar_instance, ar_instance)
+          ar_instance.instance_variable_set(:@node, node)
+        end
 
         node
       end

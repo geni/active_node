@@ -86,7 +86,7 @@ class LazyHash
     @hash.send(method, *args)
   end
 
-  def reset
+  def clear
     @hash = nil
   end
 end

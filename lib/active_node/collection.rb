@@ -238,6 +238,7 @@ module ActiveNode
       def reset
         @attributes.clear if @attributes
         @_has_cache = nil
+        @ar_instance = nil
         node_collection.reset_current_revision
       end
 
