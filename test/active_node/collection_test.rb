@@ -26,7 +26,11 @@ class CollectionTest < Test::Unit::TestCase
 
           assert_equal 'person-1', p.best_friend.node_id
           assert_equal 1998,       p.best_friend.meta['since']
-          assert p.bff?('person-1')
+          assert  p.bff?('person-1')
+          assert !p.bff?('person-2')
+          assert  p.bff?(ActiveNode.init('person-1'))
+          assert !p.bff?(ActiveNode.init('person-2'))
+          assert !p.bff?(nil)
 
           assert_equal 1, server.requests.size
           req = server.requests.shift
