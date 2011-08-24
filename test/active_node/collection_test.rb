@@ -1,10 +1,10 @@
 require File.dirname(__FILE__) + '/../test_helper'
 
 class Person < ActiveNode::Base
-  has :best_friend,  :edge     => :best_friend
+  has :best_friend,  :edge     => :best_friend, :predicate => :bff?
   has :friends,      :edges    => :friends
   has :aquaintences, :walk     => :friends_of_friends
-  has :followers,    :incoming => :followed
+  has :followers,    :incoming => :followed, :predicate => true
   has :mentor
   has :deity, :attr => :god
   has :robots
@@ -26,6 +26,7 @@ class CollectionTest < Test::Unit::TestCase
 
           assert_equal 'person-1', p.best_friend.node_id
           assert_equal 1998,       p.best_friend.meta['since']
+          assert p.bff?('person-1')
 
           assert_equal 1, server.requests.size
           req = server.requests.shift
@@ -85,6 +86,8 @@ class CollectionTest < Test::Unit::TestCase
 
           assert_equal node_ids, p.followers.node_ids.to_a
           assert_equal nil,      p.followers["person-1"].meta
+          assert  p.follower?('person-1')
+          assert !p.follower?('person-2')
 
           assert_equal 1, server.requests.size
           req = server.requests.shift

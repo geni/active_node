@@ -206,6 +206,17 @@ module ActiveNode
             has_cache[name][opts]
           end
         end
+
+        if predicate = opts[:predicate]
+          predicate = name.to_s.sub(/s$/,'') + '?' if predicate == true
+          define_method(predicate) do |other|
+            if :edge == type
+              ActiveNode::Base.node_id(send(name)) == ActiveNode::Base.node_id(other)
+            else
+              send(name).include?(other)
+            end
+          end
+        end
       end
 
     end # ClassMethods
