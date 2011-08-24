@@ -70,6 +70,7 @@ module ActiveNode
       def attr_meta(attr, opts = {})
         layers = schema[attr]  || (raise ArgumentError, "attr #{attr} does not exist in schema")
         layer  = opts[:layer]  || (layers.keys.first if layers.size == 1)
+        layer  = layer.to_s.sub('_', '-').to_sym if layer
         meta   = layers[layer]
 
         meta.merge(opts).merge(:layer => layer) if meta
