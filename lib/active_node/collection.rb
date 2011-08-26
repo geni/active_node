@@ -187,19 +187,19 @@ module ActiveNode
               end
 
             when :edges, :edge then
-              ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", opts) do |data|
+              ActiveNode::Collection.new("/#{node_id}/edges/#{path}", opts) do |data|
                 data[path] ||= {'edges' => {}}
                 {'node_ids' => data[path]['edges'].keys.sort, 'meta' => data[path]['edges']}
               end
 
             when :incoming then
-              ActiveNode::Collection.new("/#{self.node_id}/incoming/#{path}", opts) do |data|
+              ActiveNode::Collection.new("/#{node_id}/incoming/#{path}", opts) do |data|
                 data[path] ||= {'incoming' => []}
                 {'node_ids' => data[path]['incoming']}
               end
 
             when :walk then
-              ActiveNode::Collection.new("/#{self.node_id}/#{path}", opts)
+              ActiveNode::Collection.new("/#{node_id}/#{path}", opts)
 
           end
 
@@ -213,9 +213,9 @@ module ActiveNode
         singular = name.to_s.sub(/s$/,'')
         if [:edges, :walk, :incoming].include?(type)
           count = opts[:count] || "#{singular}_count"
-          define_method(count) do |args|
+          define_method(count) do |*args|
             opts = defaults.merge(extract_options(args)).merge!(:count => true)
-            has_cache[count][opts] ||= graph_read("/#{self.node_id}/incoming/#{path}", opts)['count']
+            has_cache[count][opts] ||= ActiveNode.read_graph("/#{node_id}/#{type}/#{path}", opts)['count']
           end
         end
 

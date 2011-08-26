@@ -3,7 +3,7 @@ require File.dirname(__FILE__) + '/../test_helper'
 class Person < ActiveNode::Base
   has :best_friend,  :edge     => :best_friend, :predicate => :bff?
   has :friends,      :edges    => :friends
-  has :aquaintences, :walk     => :friends_of_friends
+  has :aquaintences, :walk     => :friends_of_friends, :count => :foaf_count
   has :followers,    :incoming => :followed, :predicate => true
   has :mentor
   has :deity, :attr => :god
@@ -98,6 +98,32 @@ class CollectionTest < Test::Unit::TestCase
 
           assert_equal :read,                          req[:method]
           assert_equal '/person-42/incoming/followed', req[:path]
+        end
+      end
+
+      should 'create count method' do
+        mock_active_node({'friends' => {'count' => 42}}) do |server|
+          Person.init('person-42').friend_count
+
+          assert_equal 1, server.requests.size
+          req = server.requests.shift
+
+          assert_equal :read,                      req[:method]
+          assert_equal '/person-42/edges/friends', req[:path]
+          assert_equal true,                       req[:params][:count]
+        end
+      end
+
+      should 'create custom count method' do
+        mock_active_node({'friends_of_friends' => {'count' => 42}}) do |server|
+          Person.init('person-42').foaf_count
+
+          assert_equal 1, server.requests.size
+          req = server.requests.shift
+
+          assert_equal :read,                                req[:method]
+          assert_equal '/person-42/walk/friends-of-friends', req[:path]
+          assert_equal true,                                 req[:params][:count]
         end
       end
 
