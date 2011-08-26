@@ -174,8 +174,7 @@ module ActiveNode
         defaults = opts.freeze
 
         define_method(name) do |*args|
-          raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" if args.size > 1
-          opts = args.first || {}
+          opts = defaults.merge(extract_options(args))
 
           has_cache[name][opts] ||= case type
 
@@ -188,19 +187,19 @@ module ActiveNode
               end
 
             when :edges, :edge then
-              ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", defaults.merge(opts)) do |data|
+              ActiveNode::Collection.new("/#{self.node_id}/edges/#{path}", opts) do |data|
                 data[path] ||= {'edges' => {}}
                 {'node_ids' => data[path]['edges'].keys.sort, 'meta' => data[path]['edges']}
               end
 
             when :incoming then
-              ActiveNode::Collection.new("/#{self.node_id}/incoming/#{path}", defaults.merge(opts)) do |data|
+              ActiveNode::Collection.new("/#{self.node_id}/incoming/#{path}", opts) do |data|
                 data[path] ||= {'incoming' => []}
                 {'node_ids' => data[path]['incoming']}
               end
 
             when :walk then
-              ActiveNode::Collection.new("/#{self.node_id}/#{path}", defaults.merge(opts))
+              ActiveNode::Collection.new("/#{self.node_id}/#{path}", opts)
 
           end
 
@@ -208,6 +207,14 @@ module ActiveNode
             has_cache[name][opts].first
           else
             has_cache[name][opts]
+          end
+        end
+
+        if [:edges, :walk, :incoming].include?(type)
+          count = "#{name}_count"
+          define_method(count) do |args|
+            opts = defaults.merge(extract_options(args)).merge!(:count => true)
+            has_cache[count][opts] ||= graph_read("/#{self.node_id}/incoming/#{path}", opts)['count']
           end
         end
 
@@ -267,6 +274,11 @@ module ActiveNode
 
       def has_cache
         @_has_cache ||= Hash.deep(1)
+      end
+
+      def extract_options(args)
+        raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" if args.size > 1
+        args.first || {}
       end
 
     end # InstanceMethods

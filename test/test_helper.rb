@@ -6,6 +6,8 @@ require 'pp'
 require 'active_record'
 
 $LOAD_PATH.unshift File.dirname(__FILE__) + "/../../plugins/rupture/lib"
+$LOAD_PATH.unshift File.dirname(__FILE__) + "/../../deep_clonable/lib"
+$LOAD_PATH.unshift File.dirname(__FILE__) + "/../../ordered_set/lib"
 $LOAD_PATH.unshift File.dirname(__FILE__) + "/../lib"
 require 'active_node'
 require 'active_node/test_helper'
