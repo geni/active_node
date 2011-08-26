@@ -210,8 +210,9 @@ module ActiveNode
           end
         end
 
+        singular = name.to_s.sub(/s$/,'')
         if [:edges, :walk, :incoming].include?(type)
-          count = "#{name}_count"
+          count = opts[:count] || "#{singular}_count"
           define_method(count) do |args|
             opts = defaults.merge(extract_options(args)).merge!(:count => true)
             has_cache[count][opts] ||= graph_read("/#{self.node_id}/incoming/#{path}", opts)['count']
@@ -219,7 +220,7 @@ module ActiveNode
         end
 
         if predicate = opts[:predicate]
-          predicate = name.to_s.sub(/s$/,'') + '?' if predicate == true
+          predicate = singular + '?' if predicate == true
           define_method(predicate) do |other|
             if :edge == type
               ActiveNode::Base.node_id(send(name)) == ActiveNode::Base.node_id(other)
