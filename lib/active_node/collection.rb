@@ -215,7 +215,11 @@ module ActiveNode
           count = opts[:count] || "#{singular}_count"
           define_method(count) do |*args|
             opts = defaults.merge(extract_options(args)).merge!(:count => true)
-            has_cache[count][opts] ||= ActiveNode.read_graph("/#{node_id}/#{type}/#{path}", opts)['count']
+            has_cache[count][opts] ||= if (type == :walk)
+              ActiveNode.read_graph("/#{node_id}/#{type}/#{path}", opts)['count']
+            else
+              ActiveNode.read_graph("/#{node_id}/#{type}/#{path}", opts)[path][type.to_s]
+            end
           end
         end
 

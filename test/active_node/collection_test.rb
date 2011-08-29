@@ -61,7 +61,7 @@ class CollectionTest < Test::Unit::TestCase
         end
       end
 
-      # has :aquaintences, :walk => :friends_of_friends
+      # has :aquaintences, :walk => :friends_of_friends, :count => :foaf_count
       should 'create collection using a walk' do
         meta = {
           "person-1" => {"path" => []},
@@ -101,9 +101,10 @@ class CollectionTest < Test::Unit::TestCase
         end
       end
 
+      # has :friends, :edges => :friends
       should 'create count method' do
-        mock_active_node({'friends' => {'count' => 42}}) do |server|
-          Person.init('person-42').friend_count
+        mock_active_node({'friends' => {'edges' => 42}}) do |server|
+          assert_equal 42, Person.init('person-42').friend_count
 
           assert_equal 1, server.requests.size
           req = server.requests.shift
@@ -114,9 +115,10 @@ class CollectionTest < Test::Unit::TestCase
         end
       end
 
+      # has :aquaintences, :walk => :friends_of_friends, :count => :foaf_count
       should 'create custom count method' do
-        mock_active_node({'friends_of_friends' => {'count' => 42}}) do |server|
-          Person.init('person-42').foaf_count
+        mock_active_node({'count' => 111}) do |server|
+          assert_equal 111, Person.init('person-42').foaf_count
 
           assert_equal 1, server.requests.size
           req = server.requests.shift
