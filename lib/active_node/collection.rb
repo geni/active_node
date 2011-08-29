@@ -168,10 +168,12 @@ module ActiveNode
         associations = ASSOCIATIONS.select {|k| opts[k]}.compact
         raise ArgumentError, "only one of #{ASSOCIATIONS.join(', ')} required in has" if associations.size > 1
 
-        type     = associations.first || :attr
-        path     = opts.delete(type)
-        path     = path.to_s.gsub(/_/, '-') unless :attr == type
-        defaults = opts.freeze
+        type      = associations.first || :attr
+        path      = opts.delete(type)
+        path      = path.to_s.gsub(/_/, '-') unless :attr == type
+        predicate = opts.delete(:predicate)
+        count     = opts.delete(:count)
+        defaults  = opts.freeze
 
         define_method(name) do |*args|
           opts = defaults.merge(extract_options(args))
@@ -212,7 +214,7 @@ module ActiveNode
 
         singular = name.to_s.sub(/s$/,'')
         if [:edges, :walk, :incoming].include?(type)
-          count = opts[:count] || "#{singular}_count"
+          count ||= "#{singular}_count"
           define_method(count) do |*args|
             opts = defaults.merge(extract_options(args)).merge!(:count => true)
             has_cache[count][opts] ||= if (type == :walk)
@@ -223,7 +225,7 @@ module ActiveNode
           end
         end
 
-        if predicate = opts[:predicate]
+        if predicate
           predicate = singular + '?' if predicate == true
           define_method(predicate) do |other|
             if :edge == type
