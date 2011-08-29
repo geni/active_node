@@ -105,6 +105,10 @@ module ActiveNode
       node_ids.include?(ActiveNode::Base.node_id(node_or_id))
     end
 
+    def empty?
+      node_ids.empty?
+    end
+
     def fetch_layer_data(type, layers, revisions)
       if layers.delete(:active_record)
         record_class = ActiveNode::Base.ar_class(type)
