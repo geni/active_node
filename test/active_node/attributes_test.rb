@@ -8,6 +8,8 @@ class Person < ActiveNode::Base
   has      :aquaintences, :walk     => :friends_of_friends
   has      :followers,    :incoming => :followed
   contains :birth
+
+  mutators :delete, :undelete, :tag
 end
 
 require 'date'
@@ -387,6 +389,36 @@ class AttributesTest < Test::Unit::TestCase
       end
 
     end # context 'contained_node?'
+
+    context 'mutators' do
+
+      should 'call write_graph' do
+        mock_active_node({}) do |server|
+          p = Person.init('person-1')
+
+          assert_equal p, p.delete!
+
+          req = server.requests.shift
+          assert_equal :write,               req[:method]
+          assert_equal '/person-1/delete',   req[:path]
+
+          assert_equal p, p.undelete!('user' => 'user-3')
+
+          req = server.requests.shift
+          assert_equal :write,               req[:method]
+          assert_equal '/person-1/undelete', req[:path]
+          assert_equal({'user' => 'user-3'}, req[:data])
+
+          assert_equal p, p.tag!('photo-1')
+
+          req = server.requests.shift
+          assert_equal :write,              req[:method]
+          assert_equal '/person-1/tag',     req[:path]
+          assert_equal({'id' => 'photo-1'}, req[:data])
+        end
+      end
+
+    end # context 'mutators'
 
   end # context 'An ActiveNode model'
 end

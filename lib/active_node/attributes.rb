@@ -28,6 +28,23 @@ module ActiveNode
         @attr_methods ||= []
       end
 
+      def mutators(*methods)
+        methods.each do |method|
+          before = "before_#{method}"
+          after  = "after_#{method}"
+
+          define_method("#{method}!") do |*args|
+            opts = Utils.extract_options(args)
+            opts = {'id' => Utils.try(opts, :node_id) || opts} unless opts.kind_of?(Hash)
+
+            Utils.try(self, before, opts)
+            write_graph(method.to_s, opts)
+            Utils.try(self, after, opts)
+            self
+          end
+        end
+      end
+
       def add!(attrs)
         attrs   = modify_add_attrs(attrs)
         params  = attrs.meta[:active_node_params] || {}

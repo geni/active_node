@@ -93,6 +93,7 @@ require 'active_node/attributes'
 require 'active_node/collection'
 require 'active_node/active_record'
 require 'active_node/core_ext'
+require 'active_node/utils'
 
 class Class
   def active_node(opts = {})
