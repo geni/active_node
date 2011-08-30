@@ -9,7 +9,7 @@ class Person < ActiveNode::Base
   has      :followers,    :incoming => :followed
   contains :birth
 
-  mutators :delete, :undelete, :tag
+  mutators :delete, :undelete, :tag, :add_friend
 end
 
 require 'date'
@@ -415,6 +415,13 @@ class AttributesTest < Test::Unit::TestCase
           assert_equal :write,              req[:method]
           assert_equal '/person-1/tag',     req[:path]
           assert_equal({'id' => 'photo-1'}, req[:data])
+
+          assert_equal p, p.add_friend!(Person.init('person-2'))
+
+          req = server.requests.shift
+          assert_equal :write,                 req[:method]
+          assert_equal '/person-1/add-friend', req[:path]
+          assert_equal({'id' => 'person-2'},   req[:data])
         end
       end
 

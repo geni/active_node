@@ -38,7 +38,7 @@ module ActiveNode
             opts = {'id' => Utils.try(opts, :node_id) || opts} unless opts.kind_of?(Hash)
 
             Utils.try(self, before, opts)
-            write_graph(method.to_s, opts)
+            write_graph(method.to_s.dasherize, opts)
             Utils.try(self, after, opts)
             self
           end
