@@ -43,7 +43,7 @@ class ActiveRecordTest < Test::Unit::TestCase
         columns = [
           ActiveRecord::ConnectionAdapters::Column.new('node_id', nil, 'int')
         ]
-        Person.ar_class.stubs(:table_exists? => false, :columns => columns, :find_by_node_id => nil)
+        Person.ar_class.stubs(:table_exists? => false, :columns => columns, :find => nil)
         assert_equal 1, p.ar_instance.node_id
         assert_equal p, p.ar_instance.node
       end
@@ -57,11 +57,6 @@ class ActiveRecordTest < Test::Unit::TestCase
 
       class ArPerson < ActiveRecord::Base
         active_node
-      end
-
-      should 'add find_by_node_id method' do
-        ArPerson.stubs(:table_exists? => false, :columns => [])
-        assert_equal true, ArPerson.methods.include?('find_by_node_id')
       end
 
     end

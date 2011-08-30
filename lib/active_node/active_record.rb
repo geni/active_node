@@ -45,16 +45,6 @@ module ActiveNode::ActiveRecord
       end
     end
 
-    def find_by_node_id(node_id)
-      first(:conditions => {node_id_column => ActiveNode::Base.node_number(node_id)})
-    end
-
-    def find_all_by_node_id(node_ids)
-      return [] unless node_ids
-      node_ids = node_ids.collect {|node_id| ActiveNode::Base.node_number(node_id) }
-      all(:conditions => {node_id_column => node_ids})
-    end
-
     def ar_class
       self
     end

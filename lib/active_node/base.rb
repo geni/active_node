@@ -3,7 +3,7 @@ class ActiveNode::Base
   def self._load(str)
     node_id = Marshal.load(str)
     raise DumperException, 'invalid format' unless node_id.kind_of?(String)
-    node_class(node_id).init(node_id) 
+    node_class(node_id).init(node_id)
   end
 
   def _dump(ignored)
