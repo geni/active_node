@@ -91,7 +91,8 @@ module ActiveNode
     def fetch_layer_data(type, layers, revisions)
       if layers.delete(:active_record)
         record_class = ActiveNode::Base.active_record_class(type)
-        record_class.find_all_by_node_id(node_ids).each do |record|
+        ids = node_ids.collect {|id| ActiveNode::Base.node_number(id, type)}.compact
+        record_class.find_all_by_node_id(ids).each do |record|
           node_id = record.node_id
           @layer_data[node_id][:active_record][nil] = record.instance_variable_get(:@attributes).freeze
         end
