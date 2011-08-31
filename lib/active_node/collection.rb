@@ -80,6 +80,7 @@ module ActiveNode
     def size
       node_ids.size
     end
+    alias length size
 
     def [](index)
       if index.kind_of?(String)
