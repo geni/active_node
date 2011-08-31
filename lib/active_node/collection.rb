@@ -74,6 +74,11 @@ module ActiveNode
       end
     end
 
+    def size
+      node_ids.size
+    end
+    alias length size
+
     def [](index)
       if index.kind_of?(String) and node_ids.include?(index)
         ActiveNode.init(index, self)
