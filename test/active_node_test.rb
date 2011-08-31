@@ -53,6 +53,19 @@ class ActiveNodeTest < Test::Unit::TestCase
 
     end # context 'headers method'
 
+    context 'write_graph method' do
+
+      should 'should set graph_response metadata' do
+        response = {:foo => 'bar'}
+        mock_active_node(response) do |server|
+          data = {:id => 42}
+          Person.write_graph('/person/foo', data)
+          assert_equal response, data.meta[:graph_response]
+        end
+      end
+
+    end # context 'write_graph method'
+
   end # context 'An ActiveNode class'
 
   context 'An ActiveNode instance' do

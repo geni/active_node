@@ -82,7 +82,7 @@ class ActiveNode::Base
     end
 
     def write_graph(path, data, params = {})
-      ActiveNode.write_graph(ActiveNode.resolve_path(path, node_type), data, modify_write_params(params))
+      data.meta[:graph_response] = ActiveNode.write_graph(ActiveNode.resolve_path(path, node_type), data, modify_write_params(params))
     end
 
     def bulk_read(params = {}, &block)
