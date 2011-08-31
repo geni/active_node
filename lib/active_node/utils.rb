@@ -5,6 +5,6 @@ module ActiveNode::Utils
   end
 
   def self.try(object, method, *args)
-    object.send(method, *args) if object.respond_to?(method)
+    object.send(method, *args) if object.respond_to?(method, true)
   end
 end
