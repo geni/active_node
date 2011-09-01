@@ -124,7 +124,8 @@ module ActiveNode
         curl.send("http_#{method}", *body)
         if curl.response_code.between?(200, 299)
           results = parse_body(curl.body_str)
-          ActiveNode::Base.after_success(opts.merge(:time => curl.total_time, :results => results))
+          results.meta.merge!(opts.merge(:time => curl.total_time))
+          ActiveNode::Base.after_success(results)
           return results
         else
           error = ActiveNode::Error.new("#{method} to #{url} failed with HTTP #{curl.response_code}")
