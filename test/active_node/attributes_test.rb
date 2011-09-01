@@ -9,7 +9,7 @@ class Person < ActiveNode::Base
   has      :followers,    :incoming => :followed
   contains :birth
 
-  mutators :delete, :undelete, :tag, :add_friend
+  writers :delete!, :undelete!, :tag!, :add_friend!
 end
 
 require 'date'
@@ -390,7 +390,7 @@ class AttributesTest < Test::Unit::TestCase
 
     end # context 'contained_node?'
 
-    context 'mutators' do
+    context 'writers' do
 
       should 'call write_graph' do
         mock_active_node({}) do |server|
@@ -425,7 +425,7 @@ class AttributesTest < Test::Unit::TestCase
         end
       end
 
-    end # context 'mutators'
+    end # context 'writers'
 
   end # context 'An ActiveNode model'
 end

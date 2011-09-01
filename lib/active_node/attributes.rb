@@ -28,21 +28,32 @@ module ActiveNode
         @attr_methods ||= []
       end
 
-      def mutators(*methods)
-        methods.each do |method|
-          before = "before_#{method}"
-          after  = "after_#{method}"
+      def writers(*methods)
+        methods.each do |method_name|
+          writer(method_name)
+        end
+      end
 
-          define_method("#{method}!") do |*args|
+      def writer(method_name)
+        method_name = method_name.to_s
+        raise ArgumentError, 'writer method must end with a bang!' unless '!' == method_name.last
+        name = method_name.sub(/!$/,'') 
+        private name rescue nil
+
+        define_method(method_name) do |*args|
+          around_method   = method(name) rescue nil
+          around_method ||= lambda {|*args, &block| block.call(*args)}
+
+          around_method.call(*args) do |*modified_args|
+            args = modified_args unless modified_args.empty?
             opts = Utils.extract_options(args)
             opts = {'id' => Utils.try(opts, :node_id) || opts} unless opts.kind_of?(Hash)
 
-            Utils.try(self, before, opts)
-            write_graph(method.to_s.dasherize, opts)
-            Utils.try(self, after, opts)
-            self
+            write_graph(name.dasherize, opts)
           end
+          self
         end
+
       end
 
       def add!(attrs)
