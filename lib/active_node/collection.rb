@@ -156,7 +156,8 @@ module ActiveNode
       end.collect do |layer_revisions|
         node_id = layer_revisions['id']
         layers.each do |layer|
-          revisions = layer_revisions[layer.to_s]['revisions'] || []
+          revisions = layer_revisions[layer.to_s] || {}
+          revisions = revisions['revisions'] || []
           @layer_revisions[node_id][layer.to_sym] = revisions.freeze
         end
         node_id

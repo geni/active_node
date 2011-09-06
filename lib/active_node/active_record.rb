@@ -16,7 +16,6 @@ module ActiveNode::ActiveRecord
       @ar_instance
     end
 
-
     define_method :find_ar_instance do
       self.class.ar_class.find_by_node_id(node_number)
     end
