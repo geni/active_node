@@ -274,7 +274,7 @@ module ActiveNode
       def revisions(layers)
         return revisions([layers])[layers] unless layers.kind_of?(Array)
         revisions = {}
-        layers.each do |layer|
+        layers.flatten.each do |layer|
           revisions[layer] = node_collection.layer_revisions(node_id, layer)
         end
         revisions
