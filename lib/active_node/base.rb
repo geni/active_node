@@ -42,11 +42,15 @@ class ActiveNode::Base
     end
 
     def split_node_id(node_id)
-      node_id.split('-', 2)
+      node_id.to_s.index('-') ? node_id.to_s.split('-', 2) : [node_type, node_id].compact
     end
 
     def node_class(node_id_or_type)
       split_node_id(node_id_or_type).first.camelize.constantize
+    end
+
+    def can_init_node_id?(node_id)
+      ActiveNode::Base == self or node_type == split_node_id(node_id).first
     end
 
     attr_reader :revision
@@ -61,6 +65,7 @@ class ActiveNode::Base
     def init(node_id, opts = {})
       return if node_id.nil?
       return node_id if node_id.kind_of?(self) # TODO: ss, write test
+      raise ArgumentError, "#{self} cannot init #{node_id}" unless can_init_node_id?(node_id)
 
       node_id = node_id(node_id)
 

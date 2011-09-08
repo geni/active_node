@@ -30,6 +30,15 @@ class ActiveNodeTest < Test::Unit::TestCase
       assert_equal Person.init('person-42'), ActiveNode::Base._load(Marshal.dump('person-42'))
     end
 
+    context 'init method' do
+      should 'raise ArgumentError if node_class does not match' do
+        ex = assert_raise ArgumentError do
+          Person.init('string-1')
+        end
+        assert_match 'cannot init', ex.message
+      end
+    end
+
     context 'node_type method' do
 
       should 'set node type' do
@@ -162,10 +171,6 @@ class ActiveNodeTest < Test::Unit::TestCase
 
     should 'be equal when class and node_id are the same' do
       assert_equal Person.init('person-42'), Person.init('person-42')
-    end
-
-    should 'be unequal when class is different' do
-      assert_not_equal Other.init('person-42'), Person.init('person-42')
     end
 
     should 'be unequal when node_id is different' do
