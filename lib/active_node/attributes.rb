@@ -80,8 +80,9 @@ module ActiveNode
 
         attrs    = attrs_in_schema(attrs).merge!(attrs.meta[:active_node_attrs] || {}).merge!(:id => node_id)
         response = write_graph(path, attrs, params)
+        response.meta[:attrs] = attrs
         node     = init(node_id)
-        node.after_add(response)
+        node.send(:after_add, response)
 
         if ar_instance
           node.instance_variable_set(:@ar_instance, ar_instance)
