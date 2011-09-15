@@ -72,22 +72,19 @@ module ActiveNode
         end if attrs
         return self if attrs.nil? or attrs.empty?
 
+        graph_attrs = attrs_in_schema(attrs).merge!(attrs.meta[:active_node_attrs] || {}).merge!(:id => node_id)
+        response    = write_graph(path, graph_attrs, params)
+        node        = init(node_id)
+
         if ar_class
           ar_instance = ar_class.class_eval do
             create!(attrs.merge(node_id_column => node_id))
           end
-        end
-
-        attrs    = attrs_in_schema(attrs).merge!(attrs.meta[:active_node_attrs] || {}).merge!(:id => node_id)
-        response = write_graph(path, attrs, params)
-        response.meta[:attrs] = attrs
-        node     = init(node_id)
-        node.send(:after_add, response)
-
-        if ar_instance
           node.instance_variable_set(:@ar_instance, ar_instance)
           ar_instance.instance_variable_set(:@node, node)
         end
+
+        node.send(:after_add, response.vary_meta(:merge, :attrs => graph_attrs))
 
         node
       end
