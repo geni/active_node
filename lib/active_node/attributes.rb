@@ -218,6 +218,11 @@ module ActiveNode
         self
       end
 
+      def reset
+        ar_instance.try(:reload) if self.class.ar_class
+        super rescue nil
+      end
+
       def modify_update_attrs(attrs)
         # Called before update! is executed to modify attrs being passed in.
         self.class.modify_attrs(attrs)

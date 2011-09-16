@@ -261,6 +261,7 @@ module ActiveNode
         @_has_cache = nil
         @ar_instance = nil
         node_collection.reset_current_revision
+        super rescue nil
       end
 
       def layer_data(layer, revision = self.class.revision)
