@@ -11,22 +11,22 @@ module ActiveNode
       new([])
     end
 
-    def initialize(ids_or_uri, opts_or_meta = {}, &block)
+    def initialize(ids_or_uri, params_or_meta = {}, &block)
       if ids_or_uri.kind_of?(String)
         @uri     = ids_or_uri
-        @opts    = opts_or_meta.freeze
+        @params  = params_or_meta.freeze
         @extract = block || lambda {|data| data}
       else
         @node_ids = ids_or_uri.to_ordered_set.freeze
-        @meta     = opts_or_meta.freeze
+        @meta     = params_or_meta.freeze
       end
       @nodes = {}
       clear_cache
     end
 
-    def assoc(opts)
-      raise ArgumentError, "cannot change opts without uri" if @uri
-      self.class.new(@uri, @opts.merge(opts))
+    def assoc_params(params)
+      raise ArgumentError, "cannot change params without uri" if @uri
+      self.class.new(@uri, @params.merge(params))
     end
 
     def node_ids
@@ -296,7 +296,7 @@ module ActiveNode
   private
 
     def fetch
-      data = @extract.call(ActiveNode.read_graph(@uri, @opts))
+      data = @extract.call(ActiveNode.read_graph(@uri, @params))
       @node_ids = data['node_ids'].to_ordered_set.freeze
       @meta     = data['meta'] || {}
     end
