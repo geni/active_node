@@ -29,6 +29,14 @@ module ActiveNode
       self.class.new(@uri, @params.merge(params))
     end
 
+    def limit(limit, offset = nil)
+      assoc_params(:limit => limit, :offset => offset)
+    end
+
+    def page(page)
+      assoc_params(:page => page)
+    end
+
     def node_ids
       fetch unless @node_ids
       @node_ids
@@ -183,9 +191,9 @@ module ActiveNode
         defaults  = opts.freeze
 
         define_method(name) do |*args|
-          opts = defaults.merge(Utils.extract_options(args))
+          params = defaults.merge(Utils.extract_options(args))
 
-          has_cache[name][opts] ||= case type
+          has_cache[name][params] ||= case type
 
             when :attr then
               attr = get_attr(path || name, defaults)
@@ -196,26 +204,26 @@ module ActiveNode
               end
 
             when :edges, :edge then
-              ActiveNode::Collection.new("/#{node_id}/edges/#{path}", opts) do |data|
+              ActiveNode::Collection.new("/#{node_id}/edges/#{path}", params) do |data|
                 data[path] ||= {'edges' => {}}
                 {'node_ids' => data[path]['edges'].keys.sort, 'meta' => data[path]['edges']}
               end
 
             when :incoming then
-              ActiveNode::Collection.new("/#{node_id}/incoming/#{path}", opts) do |data|
+              ActiveNode::Collection.new("/#{node_id}/incoming/#{path}", params) do |data|
                 data[path] ||= {'incoming' => []}
                 {'node_ids' => data[path]['incoming']}
               end
 
             when :walk then
-              ActiveNode::Collection.new("/#{node_id}/#{path}", opts)
+              ActiveNode::Collection.new("/#{node_id}/#{path}", params)
 
           end
 
           if :edge == type
-            has_cache[name][opts].first
+            has_cache[name][params].first
           else
-            has_cache[name][opts]
+            has_cache[name][params]
           end
         end
 
