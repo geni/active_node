@@ -123,9 +123,9 @@ class CollectionTest < Test::Unit::TestCase
           assert_equal 1, server.requests.size
           req = server.requests.shift
 
-          assert_equal :read,                                req[:method]
-          assert_equal '/person-42/walk/friends-of-friends', req[:path]
-          assert_equal true,                                 req[:params][:count]
+          assert_equal :read,                           req[:method]
+          assert_equal '/person-42/friends-of-friends', req[:path]
+          assert_equal true,                            req[:params][:count]
         end
       end
 
