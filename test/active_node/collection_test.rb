@@ -187,6 +187,14 @@ class CollectionTest < Test::Unit::TestCase
       end
     end
 
+    context '[] method' do
+      context 'with string parameter' do
+        should 'return nil if absent' do
+          assert_nil ActiveNode::Collection.new(['person-1', 'person-2'])['person-42']
+        end
+      end # context 'with string parameter'
+    end # context '[] method'
+
   end # context 'ActiveNode collection'
 
 end # class CollectionTest

@@ -92,7 +92,7 @@ module ActiveNode
 
     def [](index)
       if index.kind_of?(String)
-        raise ArgumentError, "#{index} not in collection" unless node_ids.include?(index)
+        return nil unless node_ids.include?(index)
         node_id = index
       elsif index.kind_of?(Integer)
         node_id = node_ids[index]
