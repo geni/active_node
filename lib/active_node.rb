@@ -11,7 +11,7 @@ module ActiveNode
     host = nil
     routes(type).each do |pattern, route|
       match = pattern.match(path)
-      host  = route.kind_of?(Proc) ? route.call(match.values_at(1..-1)) : route if match
+      host  = route.kind_of?(Proc) ? route.call(*match.values_at(1..-1)) : route if match
       break if host
     end
 
@@ -39,9 +39,12 @@ module ActiveNode
     else
       path = args.first
     end
-    path ||= '.*'
-    pattern = Regexp.new(path.to_s.gsub("*","(.*?)"))
-
+    path ||= '*'
+    if path.kind_of?(Regexp)
+      pattern = path
+    else
+      pattern = Regexp.new('^' + path.to_s.gsub("*","(.*?)") + '.*?$')
+    end
     routes(:write) << [pattern, route] if type.nil? or type == :write
     routes(:read)  << [pattern, route] if type.nil? or type == :read
   end
@@ -55,11 +58,13 @@ module ActiveNode
   end
 
   def self.read_graph(path, params = {})
-    server(:read, path).read(resolve_path(path), params)
+    path = resolve_path(path)
+    server(:read, path).read(path, params)
   end
 
   def self.write_graph(path, data, params = {})
-    server(:write, path).write(resolve_path(path), data, params)
+    path = resolve_path(path)
+    server(:write, path).write(path, data, params)
   end
 
   def self.bulk_read(params = {}, &block)
