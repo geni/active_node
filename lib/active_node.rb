@@ -14,9 +14,9 @@ module ActiveNode
       host  = route.kind_of?(Proc) ? route.call(*match.values_at(1..-1)) : route if match
       break if host
     end
+    host = host.choice if host.kind_of?(Array) # choose a random server
 
-    @servers ||= {}
-    @servers[host] ||= Server.new(host)
+    Server.init(host)
   end
 
   # inspired by Sinatra (sinatrarb.com)

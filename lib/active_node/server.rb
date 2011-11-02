@@ -11,6 +11,11 @@ module ActiveNode
 
     attr_reader :host
 
+    def self.init(host)
+      @servers ||= {}
+      @servers[host] ||= new(host)
+    end
+
     def initialize(host)
       @host = host || DEFAULT_HOST
     end
