@@ -14,6 +14,10 @@ class ActiveNode::Base
     self.class == other.class and node_id == other.node_id
   end
 
+  def string_hash
+    node_id
+  end
+
   module ClassMethods
     def node_type(type = nil)
       return if self == ActiveNode::Base
