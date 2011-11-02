@@ -100,6 +100,10 @@ module ActiveNode
       @timeout = old
     end
 
+    def fallback_hosts
+      ActiveNode.fallback_hosts
+    end
+
   private
 
     def time_usec
@@ -136,7 +140,17 @@ module ActiveNode
           error = ActiveNode::Error.new("#{method} to #{url} failed with HTTP #{curl.response_code}")
           error.cause = parse_body(curl.body_str) || {}
         end
-      rescue Curl::Err::CouldntReadError, Curl::Err::ConnectionFailedError, Curl::Err::GotNothingError => e
+      rescue Curl::Err::CouldntReadError, Curl::Err::ConnectionFailedError,
+             Curl::Err::HostResolutionError, Curl::Err::GotNothingError => e
+        fallback_hosts.each do |host|
+          server = Server.init(host)
+          next if server == self
+          begin
+            return server.send(:http, opts.merge(:fallback => true))
+          rescue ActiveNode::ConnectionError
+          end
+        end unless opts[:fallback]
+
         error = ActiveNode::ConnectionError.new("#{e.class} on #{method} to #{url}: #{e.message}")
         error.cause = {}
       rescue Curl::Err::TimeoutError => e
