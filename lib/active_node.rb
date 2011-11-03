@@ -80,6 +80,11 @@ module ActiveNode
     absolute_path?(path) ? path : ['', base, path].compact.join('/') # support relative and absolute paths
   end
 
+  def self.fallback_hosts(hosts = nil)
+    @fallback_hosts = hosts if hosts
+    @fallback_hosts
+  end
+
 private
 
   def self.absolute_path?(path)

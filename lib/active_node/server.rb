@@ -101,7 +101,11 @@ module ActiveNode
     end
 
     def fallback_hosts
-      ActiveNode.fallback_hosts
+      if @fallback_hosts.nil?
+        @fallback_hosts = ActiveNode.fallback_hosts.dup
+        @fallback_hosts.delete(host)
+      end
+      @fallback_hosts
     end
 
   private
