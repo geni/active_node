@@ -6,6 +6,7 @@ module ActiveNode
   end
   class ConnectionError < Error; end
   class TimeoutError    < Error; end
+  class ReadError       < Error; end
 
   def self.server(type, path)
     host = nil

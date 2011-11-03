@@ -140,8 +140,7 @@ module ActiveNode
           error = ActiveNode::Error.new("#{method} to #{url} failed with HTTP #{curl.response_code}")
           error.cause = parse_body(curl.body_str) || {}
         end
-      rescue Curl::Err::CouldntReadError, Curl::Err::ConnectionFailedError,
-             Curl::Err::HostResolutionError, Curl::Err::GotNothingError => e
+      rescue Curl::Err::ConnectionFailedError, Curl::Err::HostResolutionError => e
         fallback_hosts.each do |host|
           server = Server.init(host)
           next if server == self
@@ -152,12 +151,13 @@ module ActiveNode
         end unless opts[:fallback]
 
         error = ActiveNode::ConnectionError.new("#{e.class} on #{method} to #{url}: #{e.message}")
-        error.cause = {}
+      rescue Curl::Err::CouldntReadError, Curl::Err::RecvError, Curl::Err::GotNothingError => e
+        error = ActiveNode::ReadError.new("#{e.class} on #{method} to #{url}: #{e.message}")
       rescue Curl::Err::TimeoutError => e
         error = ActiveNode::TimeoutError.new("#{e.class} on #{method} to #{url}: #{e.message}")
         error.cause = {:timeout => timeout}
       end
-
+      error.cause ||= {}
       error.cause.merge!(opts)
       raise error
     end
