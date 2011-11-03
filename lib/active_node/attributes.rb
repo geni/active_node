@@ -89,12 +89,6 @@ module ActiveNode
         node
       end
 
-      def layer_attrs(attr_to_layer)
-        attr_to_layer.each do |attr, opts|
-          layer_attr attr, opts
-        end
-      end
-
       def attr_meta(attr, opts = {})
         layers = schema[attr]  || (raise ArgumentError, "attr #{attr} does not exist in schema")
         layer  = opts[:layer]  || (layers.keys.first if layers.size == 1)
@@ -104,7 +98,16 @@ module ActiveNode
         meta.merge(opts).merge(:layer => layer) if meta
       end
 
-      def layer_attr(attr, opts = {})
+      def layer_attr(attr, opts=nil)
+        @layer_attr ||= {}
+        if opts
+          @layer_attr[attr] = opts
+        else
+          @layer_attr[attr]
+        end
+      end
+
+      def make_attr_method(attr, opts = {})
         meta = attr_meta(attr, opts)
 
         define_method(attr) do |*args|
@@ -163,7 +166,7 @@ module ActiveNode
       def method_missing(name, *args)
         attr = name.to_s.sub(/[\?]?$/, '').to_sym
         if self.class.schema.keys.include?(attr)
-          self.class.layer_attr(attr)
+          self.class.make_attr_method(attr, self.class.layer_attr(attr) || {})
           send(name, *args)
         else
           super
