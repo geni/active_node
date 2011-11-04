@@ -160,6 +160,8 @@ class CollectionTest < Test::Unit::TestCase
   end
 
   context 'ActiveNode collection' do
+    NODE_IDS = ['person-1', 'robot-1', 'person-2']
+
     should 'fetch revisions by layer' do
       revisions43 = {
         "id" => "person-43",
@@ -194,6 +196,85 @@ class CollectionTest < Test::Unit::TestCase
         end
       end # context 'with string parameter'
     end # context '[] method'
+
+    context 'node_ids method' do
+
+      context 'with no parameter' do
+
+        should 'return all node_ids' do
+          assert_equal NODE_IDS, ActiveNode::Collection.new(NODE_IDS).node_ids.to_a
+        end
+
+      end # context 'with no parameter'
+
+      context 'with matching type parameter' do
+
+        should 'return matching node_ids' do
+          collection = ActiveNode::Collection.new(NODE_IDS)
+          assert_equal ['person-1', 'person-2'], collection.node_ids('person').to_a
+          assert_equal ['robot-1'],              collection.node_ids('robot').to_a
+        end
+
+      end # context 'with matching type parameter'
+
+      context 'with non-matching type parameter' do
+
+        should 'return no node_ids' do
+          assert_equal [], ActiveNode::Collection.new(NODE_IDS).node_ids('bad').to_a
+        end
+
+      end # context 'with non-matching type parameter'
+
+    end # context 'node_ids method'
+
+    context 'each method' do
+
+      context 'with no parameter' do
+
+        should 'loop through all nodes' do
+          results = []
+          ActiveNode::Collection.new(NODE_IDS).each do |node|
+            results << node.node_id
+          end
+          assert_equal NODE_IDS, results
+        end
+
+      end # context 'with no parameter'
+
+      context 'with matching type parameter' do
+
+        should 'loop through some nodes' do
+          collection = ActiveNode::Collection.new(NODE_IDS)
+
+          results = []
+          collection.each('person') do |node|
+            results << node.node_id
+          end
+          assert_equal ['person-1', 'person-2'], results
+
+          results = []
+          collection.each('robot') do |node|
+            results << node.node_id
+          end
+          assert_equal ['robot-1'], results
+        end
+
+      end # context 'with matching type parameter'
+
+      context 'with non-matching type parameter' do
+
+        should 'return no node_ids' do
+          results = []
+          ActiveNode::Collection.new(NODE_IDS).each('bad') do |node|
+            results << node.node_id
+          end
+          assert_equal [], results
+        end
+
+      end # context 'with non-matching type parameter'
+
+
+    end # context 'each method'
 
   end # context 'ActiveNode collection'
 

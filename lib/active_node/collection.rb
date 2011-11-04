@@ -37,9 +37,9 @@ module ActiveNode
       assoc_params(:page => page)
     end
 
-    def node_ids
+    def node_ids(node_type=nil)
       fetch unless @node_ids
-      @node_ids
+      node_type.blank? ? @node_ids : @node_ids.select {|id| 0 == id.index(node_type)}
     end
 
     def meta
@@ -79,8 +79,8 @@ module ActiveNode
       @layer_revisions = Hash.deep(1)
     end
 
-    def each
-      node_ids.each do |node_id|
+    def each(node_type=nil)
+      node_ids(node_type).each do |node_id|
         yield @nodes[node_id] ||= ActiveNode.init(node_id, :collection => self)
       end
     end
