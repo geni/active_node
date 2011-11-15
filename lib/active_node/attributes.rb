@@ -102,6 +102,9 @@ module ActiveNode
         @layer_attr ||= {}
         if opts
           @layer_attr[attr] = opts
+
+          # pre-define method so respond_to calls work
+          define_method(attr) {|*args| method_missing(attr, *args)}
         else
           @layer_attr[attr]
         end
