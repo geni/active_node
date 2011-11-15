@@ -82,7 +82,7 @@ module ActiveNode
 
   def self.fallback_hosts(hosts = nil)
     @fallback_hosts = hosts if hosts
-    @fallback_hosts
+    @fallback_hosts || []
   end
 
 private
