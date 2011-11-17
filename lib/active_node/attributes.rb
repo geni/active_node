@@ -225,8 +225,9 @@ module ActiveNode
       end
 
       def reset
+        @ar_instance = nil
         super rescue nil
-        ar_instance.try(:reload) if self.class.ar_class and not deleted?
+        self
       end
 
       def modify_update_attrs(attrs)
