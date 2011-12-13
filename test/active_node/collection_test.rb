@@ -67,11 +67,14 @@ class CollectionTest < Test::Unit::TestCase
           "person-1" => {"path" => []},
           "person-8" => {"path" => []},
         }
-        mock_active_node({"node_ids" => meta.keys.sort, "meta" => meta}) do |server|
+        mock_active_node({"node_ids" => meta.keys.sort, "meta" => meta, "count" => 42}) do |server|
           p = Person.init('person-42')
+          coll = p.aquaintences(:limit => 2)
 
-          assert_equal meta.keys.sort, p.aquaintences.node_ids.to_a
-          assert_equal({"path" => []}, p.aquaintences["person-1"].meta)
+          assert_equal meta.keys.sort, coll.node_ids.to_a
+          assert_equal({"path" => []}, coll["person-1"].meta)
+          assert_equal 42,             coll.count
+          assert_equal 2,              coll.size
 
           assert_equal 1, server.requests.size
           req = server.requests.shift

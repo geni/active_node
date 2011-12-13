@@ -90,6 +90,11 @@ module ActiveNode
     end
     alias length size
 
+    def count
+      fetch unless @count
+      @count
+    end
+
     def [](index)
       if index.kind_of?(String)
         return nil unless node_ids.include?(index)
@@ -306,6 +311,7 @@ module ActiveNode
     def fetch
       data = @extract.call(ActiveNode.read_graph(@uri, @params))
       @node_ids = data['node_ids'].to_ordered_set.freeze
+      @count    = data['count']
       @meta     = data['meta'] || {}
     end
 
