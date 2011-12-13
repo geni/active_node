@@ -1,0 +1,2 @@
+rvm ree@active_node --create
+rvm gemset import | grep -v -E 'already installed|default\.gems|^$'

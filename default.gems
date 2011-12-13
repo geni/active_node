@@ -1,0 +1,8 @@
+# default.gems generated gem export file. Note that any env variable settings will be missing. Append these after using a ';' field separator
+curb -v0.7.15
+json -v1.5.1
+mocha -v0.10.0
+shoulda -v2.11.3
+activerecord -v2.3.9
+hamster -v0.4.2
+deep_hash -v0.0.2
