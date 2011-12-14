@@ -18,6 +18,7 @@ module ActiveNode
         @extract = block || lambda {|data| data}
       else
         @node_ids = ids_or_uri.to_ordered_set.freeze
+        @count    = @node_ids.count
         @meta     = params_or_meta.freeze
       end
       @nodes = {}
