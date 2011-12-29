@@ -32,7 +32,8 @@ module ActiveNode::ActiveRecord
   end
 
   def ar_class(type = nil)
-    type ? ActiveNode::Base.node_class(type).ar_class : @ar_class
+    return ActiveNode::Base.node_class(type).ar_class if type
+    @ar_class ||= superclass.try(:ar_class)
   end
 
   module ClassMethods
