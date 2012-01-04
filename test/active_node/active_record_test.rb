@@ -20,12 +20,15 @@ class ActiveRecordTest < Test::Unit::TestCase
         end
       end
 
-      class Vip < Person
+      class Manager < Person
         active_record('people') do
           def bar
             'instance'
           end
         end
+      end
+
+      class Executive < Manager
       end
 
       should 'add ar_class method' do
@@ -60,11 +63,19 @@ class ActiveRecordTest < Test::Unit::TestCase
 
         should 'should extend correct class' do
           Person.ar_class.stubs(:table_exists? => false, :columns => [])
-          Vip.ar_class.stubs(:table_exists? => false, :columns => [])
-          assert_equal ActiveRecord::Base, Person.ar_class.superclass
-          assert_equal Person::ActiveRecord, Vip.ar_class.superclass
-          assert_equal 'instance', Vip.ar_class.new.foo, 'instance method should be inherited'
-          assert_equal 'instance', Vip.ar_class.new.bar, 'instance method should be defined'
+          Manager.ar_class.stubs(:table_exists? => false, :columns => [])
+
+          assert_equal Person::ActiveRecord,  Person.ar_class
+          assert_equal ActiveRecord::Base,    Person.ar_class.superclass
+
+          assert_equal Manager::ActiveRecord, Manager.ar_class
+          assert_equal Person::ActiveRecord,  Manager.ar_class.superclass
+          assert_equal 'instance',            Manager.ar_class.new.foo, 'instance method should be inherited'
+          assert_equal 'instance',            Manager.ar_class.new.bar, 'instance method should be defined'
+
+          assert_equal Manager::ActiveRecord, Executive.ar_class
+          assert_equal 'instance',            Executive.ar_class.new.foo, 'instance method should be inherited'
+          assert_equal 'instance',            Executive.ar_class.new.bar, 'instance method should be defined'
         end
       end # context ar_class
 
