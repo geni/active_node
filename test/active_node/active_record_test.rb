@@ -64,7 +64,7 @@ class ActiveRecordTest < Test::Unit::TestCase
           assert_equal ActiveRecord::Base, Person.ar_class.superclass
           assert_equal Person::ActiveRecord, Vip.ar_class.superclass
           assert_equal 'instance', Vip.ar_class.new.foo, 'instance method should be inherited'
-          assert_equal 'instance', Vip.ar_class.new.bar, 'instance method should be define'
+          assert_equal 'instance', Vip.ar_class.new.bar, 'instance method should be defined'
         end
       end # context ar_class
 
