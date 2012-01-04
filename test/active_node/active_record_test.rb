@@ -20,6 +20,14 @@ class ActiveRecordTest < Test::Unit::TestCase
         end
       end
 
+      class Vip < Person
+        active_record('people') do
+          def bar
+            'instance'
+          end
+        end
+      end
+
       should 'add ar_class method' do
         assert_equal true, Person.respond_to?(:ar_class)
       end
@@ -47,6 +55,18 @@ class ActiveRecordTest < Test::Unit::TestCase
         assert_equal 1, p.ar_instance.node_id
         assert_equal p, p.ar_instance.node
       end
+
+      context 'ar_class' do
+
+        should 'should extend correct class' do
+          Person.ar_class.stubs(:table_exists? => false, :columns => [])
+          Vip.ar_class.stubs(:table_exists? => false, :columns => [])
+          assert_equal ActiveRecord::Base, Person.ar_class.superclass
+          assert_equal Person::ActiveRecord, Vip.ar_class.superclass
+          assert_equal 'instance', Vip.ar_class.new.foo, 'instance method should be inherited'
+          assert_equal 'instance', Vip.ar_class.new.bar, 'instance method should be define'
+        end
+      end # context ar_class
 
     end # context 'active_record class macro'
   end # context 'An ActiveNode class'

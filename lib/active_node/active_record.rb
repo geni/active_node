@@ -1,7 +1,7 @@
 module ActiveNode::ActiveRecord
 
   def active_record(table_name, opts={}, &block)
-    @ar_class = Class.new(ActiveRecord::Base)
+    @ar_class = Class.new(ar_parent_class)
     self.const_set("ActiveRecord", @ar_class)
     @ar_class.set_table_name(table_name)
     @ar_class.set_inheritance_column(:_disabled)
@@ -31,9 +31,19 @@ module ActiveNode::ActiveRecord
     end
   end
 
+  def ar_parent_class
+    if ActiveNode::Base == superclass
+      ActiveRecord::Base
+    elsif defined?(superclass::ActiveRecord)
+      superclass::ActiveRecord
+    else
+      ActiveRecord::Base
+    end
+  end
+
   def ar_class(type = nil)
     return ActiveNode::Base.node_class(type).ar_class if type
-    @ar_class ||= superclass.try(:ar_class)
+    @ar_class ||= superclass.try(:ar_class) rescue nil
   end
 
   module ClassMethods
