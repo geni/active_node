@@ -43,11 +43,11 @@ module ActiveNode
     end
 
     def mock_active_node_error(e)
-      server = stub do
-        stubs(:write).raises(e)
-        stubs(:read).raises(e)
+      mock_active_node do |server|
+        server.stubs(:write).raises(e)
+        server.stubs(:read).raises(e)
+        return server
       end
-      server
     end
   end
 end
