@@ -41,6 +41,7 @@ module ActiveNode::ActiveRecord
     end
   end
 
+  # TODO: may be able to get rid of parameter now that we have superclass recursion
   def ar_class(type = nil)
     return ActiveNode::Base.node_class(type).ar_class if type
     @ar_class ||= superclass.try(:ar_class) rescue nil

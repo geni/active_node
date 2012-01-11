@@ -6,7 +6,7 @@ module ActiveNode
         types.each do |type|
           klass = type.to_s.classify.constantize
           contained_classes[type] = klass
-          klass.contained_by(:type => node_type, :class => self)
+          klass.contained_by(:type => node_type, :class => self, :as => type)
 
           define_method(type) do
             contained_node(type)
@@ -56,12 +56,24 @@ module ActiveNode
         @node_container ||= self.class.node_container_class.init(node_container_id)
       end
 
+      def contained_as
+        self.class.contained_by[:as]
+      end
+
       def contained_nodes
         @contained_nodes ||= {}
         self.class.contained_classes.each do |type, klass|
           @contained_nodes[type] ||= contained_node(type)
         end
         @contained_nodes
+      end
+
+      def update!(attrs)
+        if node_container
+          node_container.update!({contained_as => attrs})
+        else
+          super
+        end
       end
 
       def contained_node(type)

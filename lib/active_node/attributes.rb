@@ -70,7 +70,7 @@ module ActiveNode
             attrs.delete(type)
           end
         end if attrs
-        return self if attrs.nil? or attrs.empty?
+        return nil if attrs.nil? or attrs.empty?
 
         graph_attrs = attrs_in_schema(attrs).merge!(attrs.meta[:active_node_attrs] || {}).merge!(:id => node_id)
         response    = write_graph(path, graph_attrs, params)
@@ -90,8 +90,8 @@ module ActiveNode
       end
 
       def attr_meta(attr, opts = {})
-        layers = schema[attr]  || (raise ArgumentError, "attr #{attr} does not exist in schema")
-        layer  = opts[:layer]  || (layers.keys.first if layers.size == 1)
+        layers = schema[attr.to_sym] || (raise ArgumentError, "attr #{attr} does not exist in schema")
+        layer  = opts[:layer]        || (layers.keys.first if layers.size == 1)
         layer  = layer.to_s.sub('_', '-').to_sym if layer
         meta   = layers[layer]
 

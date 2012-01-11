@@ -14,7 +14,7 @@ class ContainmentTest < Test::Unit::TestCase
     context 'contained_classes method' do
 
       should 'return a hash mapping type to class' do
-        assert_equal({:inner => Inner} , Outer.contained_classes)
+        assert_equal({:inner => Inner}, Outer.contained_classes)
       end
 
     end # context 'contained_classes method'
@@ -68,7 +68,7 @@ class ContainmentTest < Test::Unit::TestCase
       context 'contained_by method' do
 
         should 'return containment info hash when nil parameter' do
-          assert_equal({:type => 'outer', :class => Outer}, Inner.contained_by)
+          assert_equal({:type => 'outer', :as => :inner, :class => Outer}, Inner.contained_by)
         end
 
         should 'set containment info hash when non-nil parameter' do

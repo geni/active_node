@@ -115,11 +115,13 @@ class Class
     include ActiveNode::Collection::InstanceMethods
 
     if opts[:attributes]
-      extend  ActiveNode::Containment::ClassMethods
       extend  ActiveNode::Attributes::ClassMethods
+      # must come after Attributes because update! is overridden for contained nodes
+      extend  ActiveNode::Containment::ClassMethods
 
-      include ActiveNode::Containment::InstanceMethods
       include ActiveNode::Attributes::InstanceMethods
+      # must come after Attributes because update! is overridden for contained nodes
+      include ActiveNode::Containment::InstanceMethods
     end
 
     if defined?(ActiveRecord::Base) and ancestors.include?(ActiveRecord::Base)
