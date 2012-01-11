@@ -17,7 +17,8 @@ module ActiveNode
         @params  = params_or_meta.freeze
         @extract = block || lambda {|data| data}
       else
-        @node_ids = ids_or_uri.to_ordered_set.freeze
+        # OrderedSet.map barfs if ids_or_uri is already frozen (un-dike and run tests for more info)
+        @node_ids = ids_or_uri.to_ordered_set#.freeze
         @count    = @node_ids.count
         @meta     = params_or_meta.freeze
       end

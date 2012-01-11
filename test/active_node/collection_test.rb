@@ -276,8 +276,18 @@ class CollectionTest < Test::Unit::TestCase
 
       end # context 'with non-matching type parameter'
 
-
     end # context 'each method'
+
+    context 'map method' do
+
+      # FIXME: Justin there is a bug in deep_clone which causes this test to fail
+      should 'not fail when passed frozen OrderedSet' do
+        ActiveNode::Collection.new(OrderedSet.new.freeze).map
+        # essential code that causes failure
+        #OrderedSet.new.freeze.to_ordered_set.freeze
+      end
+
+    end # context 'map method'
 
   end # context 'ActiveNode collection'
 
