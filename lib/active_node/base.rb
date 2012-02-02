@@ -14,6 +14,10 @@ class ActiveNode::Base
     self.class == other.class and node_id == other.node_id
   end
 
+  def eql?(other)
+    self.class == other.class and node_id == other.node_id
+  end
+
   def hash
     node_id.hash
   end

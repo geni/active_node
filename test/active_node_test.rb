@@ -170,11 +170,13 @@ class ActiveNodeTest < Test::Unit::TestCase
     end
 
     should 'be equal when class and node_id are the same' do
-      assert_equal Person.init('person-42'), Person.init('person-42')
+      assert Person.init('person-42') == Person.init('person-42')
+      assert Person.init('person-42').eql?(Person.init('person-42')), 'hash-equality failed'
     end
 
     should 'be unequal when node_id is different' do
-      assert_not_equal Person.init('person-42'), Person.init('person-43')
+      assert !(Person.init('person-42') == Person.init('person-43'))
+      assert !Person.init('person-42').eql?(Person.init('person-43')), 'hash-inequality failed'
     end
 
   end # context 'An ActiveNode instance'
