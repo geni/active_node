@@ -90,7 +90,7 @@ class ActiveNode::Base
       node.instance_variable_set(:@node_id,         node_id)
       node.instance_variable_set(:@node_collection, opts[:collection])
       node.instance_variable_set(:@node_container,  opts[:container])
-      node.init_lazy_attributes if node.respond_to?(:init_lazy_attributes)
+      node.init_lazy_attributes
       node
     end
 
@@ -149,6 +149,10 @@ class ActiveNode::Base
     def write_graph(path, data, opts = {})
       path = ActiveNode.resolve_path(path, node_id)
       self.class.write_graph(path, data, opts)
+    end
+
+    def init_lazy_attributes
+      # called at end of init
     end
 
   end # module InstanceMethods

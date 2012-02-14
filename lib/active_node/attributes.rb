@@ -102,9 +102,6 @@ module ActiveNode
         @layer_attr ||= {}
         if opts
           @layer_attr[attr] = opts
-
-          # pre-define method so respond_to calls work
-          define_method(attr) {|*args| method_missing(attr, *args)}
         else
           @layer_attr[attr]
         end
@@ -173,6 +170,13 @@ module ActiveNode
           send(name, *args)
         else
           super
+        end
+      end
+
+      def respond_to?(symbol, include_private = false)
+        super || begin
+          attr = symbol.to_s.sub(/[\?]?$/, '').to_sym
+          self.class.schema.keys.include?(attr)
         end
       end
 

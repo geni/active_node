@@ -419,6 +419,10 @@ class AttributesTest < Test::Unit::TestCase
           assert_equal p, p.add_friend!(Person.init('person-2'))
 
           req = server.requests.shift
+          assert_equal :read,            req[:method]
+          assert_equal '/person/schema', req[:path]
+ 
+          req = server.requests.shift
           assert_equal :write,                 req[:method]
           assert_equal '/person-1/add-friend', req[:path]
           assert_equal({'id' => 'person-2'},   req[:data])
@@ -426,6 +430,26 @@ class AttributesTest < Test::Unit::TestCase
       end
 
     end # context 'writers'
+
+    context 'respond_to? method' do
+
+      should 'return true for ancestor methods' do
+        assert Person.init('person-42').respond_to?(:object_id)
+      end
+
+      should 'return true for schema methods' do
+        mock_active_node(person_schema) do |server|
+          assert Person.init('person-42').respond_to?(:string)
+        end
+      end
+
+      should 'return false for invalid methods' do
+        mock_active_node(person_schema) do |server|
+          assert !Person.init('person-42').respond_to?(:invalid)
+        end
+      end
+
+    end
 
   end # context 'An ActiveNode model'
 end
