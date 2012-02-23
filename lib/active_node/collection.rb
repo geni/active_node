@@ -44,6 +44,16 @@ module ActiveNode
       node_type.blank? ? @node_ids : @node_ids.select {|id| 0 == id.index(node_type)}
     end
 
+    def self.node_ids(ids_or_nodes, type = nil)
+      if ids_or_nodes.respond_to?(:node_ids)
+        ids_or_nodes.node_ids
+      else
+        ids_or_nodes.map do |node_or_id|
+          ActiveNode::Base.node_id(node_or_id, type)
+        end
+      end
+    end
+
     def meta
       fetch unless @meta
       @meta
@@ -85,6 +95,23 @@ module ActiveNode
       node_ids(node_type).each do |node_id|
         yield @nodes[node_id] ||= ActiveNode.init(node_id, :collection => self)
       end
+    end
+
+    def +(other)
+      other_ids = self.class.node_ids(other)
+      new_meta  = other.respond_to?(:meta) ? other.meta.merge(meta) : meta
+
+      self.class.new(node_ids + other_ids, new_meta)
+    end
+
+    def -(other)
+      other_ids  = self.class.node_ids(other)
+      self.class.new(node_ids - other_ids, meta)
+    end
+
+    def &(other)
+      other_ids = self.class.node_ids(other)
+      self.class.new(node_ids & other_ids, meta)
     end
 
     def size
@@ -311,10 +338,12 @@ module ActiveNode
   private
 
     def fetch
+      return unless @uri
+
       data = @extract.call(ActiveNode.read_graph(@uri, @params))
       @node_ids = data['node_ids'].to_ordered_set.freeze
       @count    = data['count']
-      @meta     = data['meta'] || {}
+      @meta     = (data['meta'] || {}).freeze
     end
 
   end

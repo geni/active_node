@@ -201,39 +201,29 @@ class CollectionTest < Test::Unit::TestCase
     end # context '[] method'
 
     context 'node_ids method' do
-
       context 'with no parameter' do
-
         should 'return all node_ids' do
           assert_equal NODE_IDS, ActiveNode::Collection.new(NODE_IDS).node_ids.to_a
         end
-
       end # context 'with no parameter'
 
       context 'with matching type parameter' do
-
         should 'return matching node_ids' do
           collection = ActiveNode::Collection.new(NODE_IDS)
           assert_equal ['person-1', 'person-2'], collection.node_ids('person').to_a
           assert_equal ['robot-1'],              collection.node_ids('robot').to_a
         end
-
       end # context 'with matching type parameter'
 
       context 'with non-matching type parameter' do
-
         should 'return no node_ids' do
           assert_equal [], ActiveNode::Collection.new(NODE_IDS).node_ids('bad').to_a
         end
-
       end # context 'with non-matching type parameter'
-
     end # context 'node_ids method'
 
     context 'each method' do
-
       context 'with no parameter' do
-
         should 'loop through all nodes' do
           results = []
           ActiveNode::Collection.new(NODE_IDS).each do |node|
@@ -241,11 +231,9 @@ class CollectionTest < Test::Unit::TestCase
           end
           assert_equal NODE_IDS, results
         end
-
       end # context 'with no parameter'
 
       context 'with matching type parameter' do
-
         should 'loop through some nodes' do
           collection = ActiveNode::Collection.new(NODE_IDS)
 
@@ -261,11 +249,9 @@ class CollectionTest < Test::Unit::TestCase
           end
           assert_equal ['robot-1'], results
         end
-
       end # context 'with matching type parameter'
 
       context 'with non-matching type parameter' do
-
         should 'return no node_ids' do
           results = []
           ActiveNode::Collection.new(NODE_IDS).each('bad') do |node|
@@ -273,21 +259,46 @@ class CollectionTest < Test::Unit::TestCase
           end
           assert_equal [], results
         end
-
       end # context 'with non-matching type parameter'
-
     end # context 'each method'
 
     context 'map method' do
-
       # FIXME: Justin there is a bug in deep_clone which causes this test to fail
       should 'not fail when passed frozen OrderedSet' do
         ActiveNode::Collection.new(OrderedSet.new.freeze).map
         # essential code that causes failure
         #OrderedSet.new.freeze.to_ordered_set.freeze
       end
-
     end # context 'map method'
+
+    context 'arithmetic methods' do
+      should 'add collections merging meta' do
+        a = ActiveNode::Collection.new(['person-1', 'person-2'], {'person-1' => :foo})
+        b = ActiveNode::Collection.new(['person-2', 'person-3'], {'person-2' => :bar})
+        c = a + b
+
+        assert_equal ['person-1', 'person-2', 'person-3'], c.node_ids.to_a
+        assert_equal({'person-1' => :foo, 'person-2' => :bar}, c.meta)
+      end
+
+      should 'subtract collections preserving meta' do
+        a = ActiveNode::Collection.new(['person-1', 'person-2'], {'person-1' => :foo})
+        b = ActiveNode::Collection.new(['person-2', 'person-3'], {'person-2' => :bar})
+        c = a - b
+
+        assert_equal ['person-1'], c.node_ids.to_a
+        assert_equal({'person-1' => :foo}, c.meta)
+      end
+
+      should 'intersect collections preserving meta' do
+        a = ActiveNode::Collection.new(['person-1', 'person-2'], {'person-2' => :foo})
+        b = ActiveNode::Collection.new(['person-2', 'person-3'], {'person-2' => :bar})
+        c = a & b
+
+        assert_equal ['person-2'], c.node_ids.to_a
+        assert_equal({'person-2' => :foo}, c.meta)
+      end
+    end # context 'arithmetic methods'
 
   end # context 'ActiveNode collection'
 
