@@ -31,6 +31,7 @@ module ActiveNode
     def write(path, data, params = {})
       raise Error, 'cannot write inside a bulk_read block' if @@bulk_params
 
+      params = params.clone
       params[:request_time] ||= time_usec
       http(:method => :write, :path => path, :data => data || {}, :params => params)
 
