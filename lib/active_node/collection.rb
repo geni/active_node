@@ -11,16 +11,16 @@ module ActiveNode
       new([])
     end
 
-    def initialize(ids_or_uri, params_or_meta = {}, &block)
+    def initialize(ids_or_uri, params_or_edges = {}, &block)
       if ids_or_uri.kind_of?(String)
         @uri     = ids_or_uri
-        @params  = params_or_meta.freeze
-        @extract = block || lambda {|data| data}
+        @params  = params_or_edges.freeze
+        @extract = block || lambda {|response| response}
       else
         # OrderedSet.map barfs if ids_or_uri is already frozen (un-dike and run tests for more info)
-        @node_ids = ids_or_uri.to_ordered_set#.freeze
-        @count    = @node_ids.count
-        @meta     = params_or_meta.freeze
+        @node_ids  = ids_or_uri.to_ordered_set#.freeze
+        @count     = @node_ids.count
+        @edge_data = params_or_edges.freeze
       end
       @nodes = {}
       clear_cache
@@ -54,9 +54,9 @@ module ActiveNode
       end
     end
 
-    def meta
-      fetch unless @meta
-      @meta
+    def edge_data
+      fetch unless @edge_data
+      @edge_data
     end
 
     def layer_data(node_id, layer, revision=nil)
@@ -99,19 +99,19 @@ module ActiveNode
 
     def +(other)
       other_ids = self.class.node_ids(other)
-      new_meta  = other.respond_to?(:meta) ? other.meta.merge(meta) : meta
+      new_edges = other.respond_to?(:edge_data) ? other.edge_data.merge(edge_data) : edge_data
 
-      self.class.new(node_ids + other_ids, new_meta)
+      self.class.new(node_ids + other_ids, new_edges)
     end
 
     def -(other)
       other_ids  = self.class.node_ids(other)
-      self.class.new(node_ids - other_ids, meta)
+      self.class.new(node_ids - other_ids, edge_data)
     end
 
     def &(other)
       other_ids = self.class.node_ids(other)
-      self.class.new(node_ids & other_ids, meta)
+      self.class.new(node_ids & other_ids, edge_data)
     end
 
     def size
@@ -228,30 +228,25 @@ module ActiveNode
           params = defaults.merge(Utils.extract_options(args))
 
           has_cache[name][params] ||= case type
-
-            when :attr then
-              attr = get_attr(path || name, defaults)
-              if attr.is_a?(Array)
-                ActiveNode::Collection.new(attr)
-              else
-                ActiveNode.init(attr)
-              end
-
-            when :edges, :edge then
-              ActiveNode::Collection.new("/#{node_id}/edges/#{path}", params) do |data|
-                data[path] ||= {'edges' => {}}
-                {'node_ids' => data[path]['edges'].keys.sort, 'meta' => data[path]['edges']}
-              end
-
-            when :incoming then
-              ActiveNode::Collection.new("/#{node_id}/incoming/#{path}", params) do |data|
-                data[path] ||= {'incoming' => []}
-                {'node_ids' => data[path]['incoming']}
-              end
-
-            when :walk then
-              ActiveNode::Collection.new("/#{node_id}/#{path}", params)
-
+          when :attr then
+            attr = get_attr(path || name, defaults)
+            if attr.is_a?(Array)
+              ActiveNode::Collection.new(attr)
+            else
+              ActiveNode.init(attr)
+            end
+          when :edges, :edge then
+            ActiveNode::Collection.new("/#{node_id}/edges/#{path}", params) do |response|
+              response[path] ||= {'edges' => {}}
+              {'node_ids' => response[path]['edges'].keys.sort, 'data' => response[path]['edges']}
+            end
+          when :incoming then
+            ActiveNode::Collection.new("/#{node_id}/incoming/#{path}", params) do |response|
+              response[path] ||= {'incoming' => []}
+              {'node_ids' => response[path]['incoming']}
+            end
+          when :walk then
+            ActiveNode::Collection.new("/#{node_id}/#{path}", params)
           end
 
           if :edge == type
@@ -293,10 +288,9 @@ module ActiveNode
         @node_collection ||= ActiveNode::Collection.new([node_id])
       end
 
-      def meta
-        node_collection.meta[node_id]
+      def edge_data
+        node_collection.edge_data[node_id]
       end
-      alias edge meta
 
       def reset
         @attributes.clear if @attributes
@@ -340,10 +334,10 @@ module ActiveNode
     def fetch
       return unless @uri
 
-      data = @extract.call(ActiveNode.read_graph(@uri, @params))
-      @node_ids = data['node_ids'].to_ordered_set.freeze
-      @count    = data['count']
-      @meta     = (data['meta'] || {}).freeze
+      response = @extract.call(ActiveNode.read_graph(@uri, @params))
+      @node_ids  = response['node_ids'].to_ordered_set.freeze
+      @count     = response['count']
+      @edge_data = (response['data'] || {}).freeze
     end
 
   end

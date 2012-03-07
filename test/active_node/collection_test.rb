@@ -25,7 +25,7 @@ class CollectionTest < Test::Unit::TestCase
           p = Person.init('person-42')
 
           assert_equal 'person-1', p.best_friend.node_id
-          assert_equal 1998,       p.best_friend.meta['since']
+          assert_equal 1998,       p.best_friend.edge_data['since']
           assert  p.bff?('person-1')
           assert !p.bff?('person-2')
           assert  p.bff?(ActiveNode.init('person-1'))
@@ -51,7 +51,7 @@ class CollectionTest < Test::Unit::TestCase
           p = Person.init('person-42')
 
           assert_equal edges.keys.sort,      p.friends.node_ids.to_a
-          assert_equal({"context" => "UNM"}, p.friends["person-1"].meta)
+          assert_equal({"context" => "UNM"}, p.friends["person-1"].edge_data)
 
           assert_equal 1, server.requests.size
           req = server.requests.shift
@@ -63,16 +63,16 @@ class CollectionTest < Test::Unit::TestCase
 
       # has :aquaintences, :walk => :friends_of_friends, :count => :foaf_count
       should 'create collection using a walk' do
-        meta = {
+        edge_data = {
           "person-1" => {"path" => []},
           "person-8" => {"path" => []},
         }
-        mock_active_node({"node_ids" => meta.keys.sort, "meta" => meta, "count" => 42}) do |server|
+        mock_active_node({"node_ids" => edge_data.keys.sort, "data" => edge_data, "count" => 42}) do |server|
           p = Person.init('person-42')
           coll = p.aquaintences(:limit => 2)
 
-          assert_equal meta.keys.sort, coll.node_ids.to_a
-          assert_equal({"path" => []}, coll["person-1"].meta)
+          assert_equal edge_data.keys.sort, coll.node_ids.to_a
+          assert_equal({"path" => []}, coll["person-1"].edge_data)
           assert_equal 42,             coll.count
           assert_equal 2,              coll.size
 
@@ -92,7 +92,7 @@ class CollectionTest < Test::Unit::TestCase
           p = Person.init('person-42')
 
           assert_equal node_ids, p.followers.node_ids.to_a
-          assert_equal nil,      p.followers["person-1"].meta
+          assert_equal nil,      p.followers["person-1"].edge_data
           assert  p.follower?('person-1')
           assert !p.follower?('person-2')
 
@@ -272,31 +272,31 @@ class CollectionTest < Test::Unit::TestCase
     end # context 'map method'
 
     context 'arithmetic methods' do
-      should 'add collections merging meta' do
+      should 'add collections merging edge_data' do
         a = ActiveNode::Collection.new(['person-1', 'person-2'], {'person-1' => :foo})
         b = ActiveNode::Collection.new(['person-2', 'person-3'], {'person-2' => :bar})
         c = a + b
 
         assert_equal ['person-1', 'person-2', 'person-3'], c.node_ids.to_a
-        assert_equal({'person-1' => :foo, 'person-2' => :bar}, c.meta)
+        assert_equal({'person-1' => :foo, 'person-2' => :bar}, c.edge_data)
       end
 
-      should 'subtract collections preserving meta' do
+      should 'subtract collections preserving edge_data' do
         a = ActiveNode::Collection.new(['person-1', 'person-2'], {'person-1' => :foo})
         b = ActiveNode::Collection.new(['person-2', 'person-3'], {'person-2' => :bar})
         c = a - b
 
         assert_equal ['person-1'], c.node_ids.to_a
-        assert_equal({'person-1' => :foo}, c.meta)
+        assert_equal({'person-1' => :foo}, c.edge_data)
       end
 
-      should 'intersect collections preserving meta' do
+      should 'intersect collections preserving edge_data' do
         a = ActiveNode::Collection.new(['person-1', 'person-2'], {'person-2' => :foo})
         b = ActiveNode::Collection.new(['person-2', 'person-3'], {'person-2' => :bar})
         c = a & b
 
         assert_equal ['person-2'], c.node_ids.to_a
-        assert_equal({'person-2' => :foo}, c.meta)
+        assert_equal({'person-2' => :foo}, c.edge_data)
       end
     end # context 'arithmetic methods'
 
