@@ -31,7 +31,7 @@ module ActiveNode
     def write(path, data, params = {})
       raise Error, 'cannot write inside a bulk_read block' if @@bulk_params
 
-      params[:request_time] ||= time_nsec
+      params[:request_time] ||= time_usec
       http(:method => :write, :path => path, :data => data || {}, :params => params)
 
     rescue ActiveNode::ConnectionError => e
@@ -110,13 +110,9 @@ module ActiveNode
 
   private
 
-    def time_nsec
+    def time_usec
       t = Time.now
-      (t.to_i * 1_000_000 + t.usec) * 1000 + ticker
-    end
-
-    def ticker
-      @ticker = @ticker ? (@ticker + 1) % 1000 : 0
+      t.usec + t.to_i * 1_000_000
     end
 
     HTTP_METHOD = {
