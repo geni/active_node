@@ -115,9 +115,8 @@ module ActiveNode
       (t.to_i * 1_000_000 + t.usec) * 1000 + ticker
     end
 
-    @@ticker = 0
     def ticker
-      @@ticker = (@@ticker + 1) % 1000
+      @ticker = @ticker ? (@ticker + 1) % 1000 : 0
     end
 
     HTTP_METHOD = {
