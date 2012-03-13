@@ -45,9 +45,11 @@ module ActiveNode
           around_method ||= lambda {|*args, &block| block.call(*args)}
 
           around_method.call(*args) do |*modified_args|
-            args = modified_args unless modified_args.empty?
-            opts = Utils.extract_options(args)
-            opts = {'id' => Utils.try(opts, :node_id) || opts} unless opts.kind_of?(Hash)
+            Utils.ensure_arity(modified_args, 1)
+            args = modified_args unless modified_args.empty? # yielding nothing means args unchanged
+
+            arg  = args.first || {} # arg can be hash or node or node_id
+            opts = arg.kind_of?(Hash) ? arg : {'id' => Utils.try(arg, :node_id) || arg}
 
             write_graph(name.dasherize, opts)
           end

@@ -1,7 +1,7 @@
 module ActiveNode::Utils
-  def self.extract_options(args)
-    raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" if args.size > 1
-    args.first || {}
+  def self.ensure_arity(args, max, min = 0)
+    raise ArgumentError, "wrong number of arguments (#{args.size} for #{min})" if args.size < min
+    raise ArgumentError, "wrong number of arguments (#{args.size} for #{max})" if args.size > max
   end
 
   def self.try(object, method, *args)

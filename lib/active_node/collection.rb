@@ -225,7 +225,8 @@ module ActiveNode
         defaults  = opts.freeze
 
         define_method(name) do |*args|
-          params = defaults.merge(Utils.extract_options(args))
+          Utils.ensure_arity(args, 1)
+          params = defaults.merge(args.first || {})
 
           has_cache[name][params] ||= case type
           when :attr then
@@ -260,7 +261,8 @@ module ActiveNode
         if [:edges, :walk, :incoming].include?(type)
           count ||= "#{singular}_count"
           define_method(count) do |*args|
-            opts = defaults.merge(Utils.extract_options(args)).merge!(:count => true)
+            Utils.ensure_arity(args, 1)
+            opts = defaults.merge(args.first || {}).merge!(:count => true)
             has_cache[count][opts] ||= if (type == :walk)
               ActiveNode.read_graph("/#{node_id}/#{path}", opts)['count']
             else
