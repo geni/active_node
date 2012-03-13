@@ -74,20 +74,6 @@ class AttributesTest < Test::Unit::TestCase
           assert_equal({:id => 'person-1', :string => 'string'}, req[:data])
         end
       end
-
-      should 'call modify_add_attrs with attrs' do
-        mock_active_node(next_node_id, person_schema) do
-          Person.expects(:modify_add_attrs).with(:string => 'one').returns(:string => 'one')
-          Person.add!(:string => 'one')
-        end
-      end
-
-      should 'call after_add with attrs' do
-        mock_active_node(next_node_id, person_schema, {:response => 1}) do
-          Person.any_instance.expects(:after_add).with(:response => 1)
-          Person.add!(:string => 'one')
-        end
-      end
     end
 
     context 'with active_record' do
@@ -183,7 +169,6 @@ class AttributesTest < Test::Unit::TestCase
     context 'update!' do
 
       should 'update attributes' do
-
         data = [{
           'id'  => 'person-1',
           'a' => {
@@ -205,20 +190,6 @@ class AttributesTest < Test::Unit::TestCase
           assert_equal :write,              req[:method]
           assert_equal '/person-1/update',  req[:path]
           assert_equal({'string' => 'new', 'int' => 42},  JSON.parse(req[:body]))
-        end
-      end
-
-      should 'call modify_update_attrs' do
-        mock_active_node(person_schema) do
-          Person.any_instance.expects(:modify_update_attrs).with(:string => 'one').returns(:string => 'one')
-          Person.init('person-1').update!(:string => 'one')
-        end
-      end
-
-      should 'call after_update with attrs' do
-        mock_active_node(person_schema, {:response => 1}) do
-          Person.any_instance.expects(:after_update).with(:response => 1)
-          Person.init('person-1').update!(:string => 'one')
         end
       end
 

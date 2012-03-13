@@ -37,7 +37,7 @@ module ActiveNode
       def writer(method_name)
         method_name = method_name.to_s
         raise ArgumentError, 'writer method must end with a bang!' unless '!' == method_name.last
-        name = method_name.sub(/!$/,'') 
+        name = method_name.sub(/!$/,'')
         private name rescue nil
 
         define_method(method_name) do |*args|
@@ -58,36 +58,52 @@ module ActiveNode
 
       end
 
+      def add(attrs)
+        yield(attrs)
+      end
+
       def add!(attrs)
-        attrs   = modify_add_attrs(attrs)
-        params  = attrs.meta[:active_node_params] || {}
-        path    = attrs.meta[:active_node_path] || 'add'
-        node_id = next_node_id
+        node = nil
+        add(attrs) do |*args|
+          Utils.ensure_arity(args, 1)
+          node_id = next_node_id
+          attrs   = args.first || {} unless args.empty?
+          params  = attrs.meta[:active_node_params] || {}
+          path    = attrs.meta[:active_node_path]   || 'add'
 
-        contained_classes.each do |type, klass|
-          next unless sub_attrs = attrs[type]
-          if sub_attrs = klass.modify_add_attrs(sub_attrs)
-            attrs[type] = sub_attrs
-          else
-            attrs.delete(type)
+          contained_classes.each do |type, klass|
+            next unless sub_attrs = attrs[type]
+
+            klass.send(:add, sub_attrs) do |*args|
+              Utils.ensure_arity(args, 1)
+              sub_attrs = args.first unless args.empty?
+              if sub_attrs.empty?
+                attrs.delete(type)
+              else
+                attrs[type] = sub_attrs
+              end
+            end
+          end if attrs
+          return nil if attrs.nil? or attrs.empty?
+
+          graph_attrs = attrs_in_schema(attrs).merge!(:id => node_id)
+          response    = write_graph(path, graph_attrs, params)
+          node        = init(node_id)
+
+          if ar_class
+            ar_instance = ar_class.class_eval do
+              create!(attrs.merge(node_id_column => node_id))
+            end
+            node.instance_variable_set(:@ar_instance, ar_instance)
+            ar_instance.instance_variable_set(:@node, node)
           end
-        end if attrs
-        return nil if attrs.nil? or attrs.empty?
 
-        graph_attrs = attrs_in_schema(attrs).merge!(attrs.meta[:active_node_attrs] || {}).merge!(:id => node_id)
-        response    = write_graph(path, graph_attrs, params)
-        node        = init(node_id)
-
-        if ar_class
-          ar_instance = ar_class.class_eval do
-            create!(attrs.merge(node_id_column => node_id))
-          end
-          node.instance_variable_set(:@ar_instance, ar_instance)
-          ar_instance.instance_variable_set(:@node, node)
+          { # return this stuff to add() in case they need it
+            :response => response,
+            :node     => node,
+            :attrs    => graph_attrs,
+          }
         end
-
-        node.send(:after_add, response.vary_meta(:merge, :attrs => graph_attrs))
-
         node
       end
 
@@ -133,8 +149,7 @@ module ActiveNode
 
       def attrs_in_schema(attrs)
         attrs = attrs.reject do |key, value|
-          key = key.to_sym
-          not schema.include?(key)
+          not schema.include?(key.to_sym)
         end
 
         contained_classes.each do |type, klass|
@@ -142,17 +157,7 @@ module ActiveNode
           attrs[type] = klass.attrs_in_schema(sub_attrs)
         end
 
-        attrs
-      end
-
-      def modify_attrs(attrs)
-        # By default this is called by modify_add_attrs and modify_update_attrs.
-        attrs
-      end
-
-      def modify_add_attrs(attrs)
-        # Called before add! is executed to modify attrs being passed in.
-        modify_attrs(attrs)
+        attrs.merge!(attrs.meta[:active_node_attrs] || {})
       end
 
     private
@@ -203,30 +208,45 @@ module ActiveNode
         end
       end
 
+      def update(attrs)
+        yield(attrs)
+      end
+
       def update!(attrs)
-        attrs  = modify_update_attrs(attrs)
-        params = attrs.meta[:active_node_params] || {}
+        update(attrs) do |*args|
+          Utils.ensure_arity(args, 1)
+          attrs  = args.first || {} unless args.empty?
+          params = attrs.meta[:active_node_params] || {}
+          path   = attrs.meta[:active_node_path]   || 'update'
 
-        contained_nodes.each do |type, node|
-          next unless sub_attrs = attrs[type]
-          sub_attrs = node.modify_update_attrs(sub_attrs)
-          if sub_attrs.blank? || sub_attrs.empty?
-            attrs.delete(type)
-          else
-            attrs[type] = sub_attrs
+          contained_nodes.each do |type, node|
+            next unless sub_attrs = attrs[type]
+
+            node.send(:update, sub_attrs) do |*args|
+              Utils.ensure_arity(args, 1)
+              sub_attrs = args.first unless args.empty?
+              if sub_attrs.empty?
+                attrs.delete(type)
+              else
+                attrs[type] = sub_attrs
+              end
+            end
+          end if attrs
+          return self if attrs.nil? or attrs.empty?
+          
+          graph_attrs = self.class.attrs_in_schema(attrs)
+          response    = write_graph(path, graph_attrs, params) unless graph_attrs.empty?
+          
+          if self.class.ar_class
+            ar_instance.update_attributes!(attrs)
           end
-        end if attrs
-        return self if attrs.nil? or attrs.empty?
-
-        schema_attrs = self.class.attrs_in_schema(attrs)
-        response = write_graph('update', schema_attrs, params) unless schema_attrs.empty?
-
-        if self.class.ar_class
-          ar_instance.update_attributes!(attrs)
+          
+          reset
+          { # return this stuff to update() in case they need it
+            :response => response,
+            :attrs    => graph_attrs,
+          }
         end
-
-        reset
-        after_update(response) if response
         self
       end
 
@@ -234,19 +254,6 @@ module ActiveNode
         @ar_instance = nil
         super rescue nil
         self
-      end
-
-      def modify_update_attrs(attrs)
-        # Called before update! is executed to modify attrs being passed in.
-        self.class.modify_attrs(attrs)
-      end
-
-      def after_update(response)
-        # Called after update! is complete with the server response.
-      end
-
-      def after_add(response)
-        # Called after add! is complete with the server response.
       end
 
     end # module InstanceMethods
