@@ -36,19 +36,18 @@ class AttributesTest < Test::Unit::TestCase
       'bool'   => {'a' => {'type' => 'boolean'}},
       'foo'    => {'a' => {'type' => 'string'}, 'b' => {'type' => 'int'}},
       'bar'    => {'a' => {'type' => 'string'}, 'b' => {'type' => 'int'}},
-      'birth'  => {'events' => {'type' => 'message'}},
+      'birth'  => {
+        'events' => {
+          'type'   => 'struct',
+          'fields' => {'date' => {'class' => 'MyDate'}},
+        },
+      },
     }
   end
 
   def birth_schema
     {
       'description' => {'b' => {'type' => 'string'}},
-    }
-  end
-
-  def person_birth_schema
-    {
-      'date' => {'events' => {'class' => 'MyDate'}},
     }
   end
 
@@ -314,7 +313,7 @@ class AttributesTest < Test::Unit::TestCase
 
       should 'access birth through profile' do
         Birth.reset
-        mock_active_node(birth_schema, person_birth_schema, person_data, birth_data) do |server|
+        mock_active_node(birth_schema, person_schema, person_data, birth_data) do |server|
           p = Person.init('person-1')
           assert_equal Birth,     p.birth.class
           assert_equal 'birth-1', p.birth.node_id
@@ -327,7 +326,7 @@ class AttributesTest < Test::Unit::TestCase
 
       should 'init birth directly' do
         Birth.reset
-        mock_active_node(birth_schema, person_birth_schema, person_data, birth_data) do |server|
+        mock_active_node(birth_schema, person_schema, person_data, birth_data) do |server|
           b = Birth.init('birth-1')
           assert_equal Birth,     b.class
           assert_equal 'birth-1', b.node_id

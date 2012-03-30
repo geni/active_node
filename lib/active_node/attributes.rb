@@ -11,12 +11,13 @@ module ActiveNode
       def schema
         if @schema.nil?
           @schema = read_graph('schema')
-
-          node_container_class.read_graph("schema/#{node_type}").each do |attr, layers|
-            layers.each do |layer, meta|
+        
+          node_container_class.read_graph("schema")[node_type].each do |layer, field|
+            raise "struct required for contained type field #{node_type}" unless field['type'] == 'struct'
+            field['fields'].each do |attr, meta|
               @schema[attr] ||= {}
               @schema[attr][layer] = meta.merge(:contained => true)
-            end if layers.kind_of?(Hash)
+            end
           end if node_container_class
 
           @schema.deep_symbolize_keys!
