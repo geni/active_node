@@ -15,7 +15,7 @@ module ActiveNode
       host  = route.kind_of?(Proc) ? route.call(*match.values_at(1..-1)) : route if match
       break if host
     end
-    host = host.choice unless host.kind_of?(String) # choose a random server
+    host = host.choice if host.respond_to?(:choice) # choose a random server
 
     Server.init(host)
   end
