@@ -11,14 +11,14 @@ module ActiveNode
       new([])
     end
 
-    def initialize(ids_or_uri, params_or_edges = {}, &block)
-      if ids_or_uri.kind_of?(String)
-        @uri     = ids_or_uri
+    def initialize(uri_or_ids, params_or_edges = {}, &block)
+      if uri_or_ids.kind_of?(String)
+        @uri     = uri_or_ids
         @params  = params_or_edges.freeze
         @extract = block || lambda {|response| response}
       else
-        # OrderedSet.map barfs if ids_or_uri is already frozen (un-dike and run tests for more info)
-        @node_ids  = ids_or_uri.to_ordered_set#.freeze
+        # OrderedSet.map barfs if uri_or_ids is already frozen (un-dike and run tests for more info)
+        @node_ids  = uri_or_ids.to_ordered_set#.freeze
         @count     = @node_ids.count
         @edge_data = params_or_edges.freeze
       end
