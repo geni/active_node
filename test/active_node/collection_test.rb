@@ -300,6 +300,21 @@ class CollectionTest < Test::Unit::TestCase
       end
     end # context 'arithmetic methods'
 
+    context 'assoc_params method' do
+
+      should 'raise ArgumentError if no URI' do
+        assert_raise ArgumentError do
+          ActiveNode::Collection.new(['person-1'], 'person-1' => :foo).assoc_params({})
+        end
+      end
+
+      should 'return new instance' do
+        original = ActiveNode::Collection.new('/foo', 'person-1' => :foo)
+        assert_not_same original, original.assoc_params(:new => 'value')
+      end
+
+    end # context 'assoc_params method'
+
   end # context 'ActiveNode collection'
 
 end # class CollectionTest

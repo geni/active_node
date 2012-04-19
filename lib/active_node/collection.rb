@@ -27,7 +27,7 @@ module ActiveNode
     end
 
     def assoc_params(params)
-      raise ArgumentError, "cannot change params without uri" if @uri
+      raise ArgumentError, "cannot change params without uri" unless @uri
       self.class.new(@uri, @params.merge(params))
     end
 
