@@ -177,7 +177,15 @@ class AttributesTest < Test::Unit::TestCase
 
         mock_active_node(person_schema, {}, data) do |server|
           person = Person.init('person-1')
-          person.update!({:string => 'new', :int => 42, :bad => 'ignore'})
+          person.update!(
+            :string => 'new',
+            :int    => 42,
+            :bad    => 'ignore',
+            :birth  => {
+              :bad  => 'ignore',
+              :date => '2009-05-21'
+            }
+          )
 
           assert_equal 2, server.requests.size
 
@@ -188,7 +196,13 @@ class AttributesTest < Test::Unit::TestCase
           req = server.requests.shift
           assert_equal :write,              req[:method]
           assert_equal '/person-1/update',  req[:path]
-          assert_equal({'string' => 'new', 'int' => 42},  JSON.parse(req[:body]))
+
+          expected = {
+            'string' => 'new',
+            'int'    => 42,
+            'birth'  => {'date' => '2009-05-21'},
+          }
+          assert_equal expected,  JSON.parse(req[:body])
         end
       end
 

@@ -108,7 +108,7 @@ module ActiveNode
         node
       end
 
-      def attr_meta(attr, opts = {})
+      def attr_meta(attr, opts = layer_attr(attr))
         layers = schema[attr.to_sym] || (raise ArgumentError, "attr #{attr} does not exist in schema")
         layer  = opts[:layer]        || (layers.keys.first if layers.size == 1)
         layer  = layer.to_s.sub('_', '-').to_sym if layer
@@ -122,7 +122,7 @@ module ActiveNode
         if opts
           @layer_attr[attr] = opts
         else
-          @layer_attr[attr]
+          @layer_attr[attr] || {}
         end
       end
 
@@ -149,9 +149,7 @@ module ActiveNode
       end
 
       def attrs_in_schema(attrs)
-        attrs = attrs.reject do |key, value|
-          not schema.include?(key.to_sym)
-        end
+        attrs = filter_schema(attrs, schema, true)
 
         contained_classes.each do |type, klass|
           next unless sub_attrs = attrs[type]
@@ -162,6 +160,53 @@ module ActiveNode
       end
 
     private
+
+      def filter_schema(value, schema, top_level=false)
+        return nil unless schema
+
+        if top_level
+          return value.inject({}) do |attrs, (key, val)|
+            next attrs unless schema[key.to_sym]
+            next attrs unless meta = attr_meta(key)
+            next attrs unless sub_schema = schema[key.to_sym][meta[:layer].to_sym]
+
+            filtered_value = filter_schema(val, sub_schema)
+            next attrs if filtered_value.blank?
+
+            attrs.merge!(key => filtered_value)
+          end
+        end
+
+        case schema[:type]
+
+        when 'map'
+          value.inject({}) do |attrs, (key, val)|
+            filtered_value = filter_schema(val, schema[:values])
+            next attrs if filtered_value.blank?
+
+            attrs.merge!(key => filtered_value)
+          end
+
+        when 'struct'
+          value.inject({}) do |attrs, (key, val)|
+            next attrs unless sub_schema = schema[:fields][key.to_sym]
+
+            filtered_value = filter_schema(val, sub_schema)
+            next attrs if filtered_value.blank?
+
+            attrs.merge!(key => filtered_value)
+          end
+
+        when 'list', 'set'
+          value.map do |val|
+            filter_schema(val, schema[:values])
+          end.compact
+
+        else
+          value
+        end
+
+      end
 
       def next_node_id
         read_graph('next-node-id')['node_id']
