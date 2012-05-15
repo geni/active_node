@@ -21,12 +21,6 @@ module ActiveNode
 
       def attrs_in_schema(attrs)
         filtered = filter_schema(attrs, schema, true)
-
-        contained_classes.each do |type, klass|
-          next unless sub_attrs = filtered[type]
-          filtered[type] = klass.attrs_in_schema(sub_attrs)
-        end
-
         filtered.merge!(attrs.meta[:active_node_attrs] || {})
       end
 
