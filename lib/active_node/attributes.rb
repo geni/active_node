@@ -91,38 +91,20 @@ module ActiveNode
         node
       end
 
-      def attr_meta(attr, opts = layer_attr(attr))
-        layers = schema[attr.to_sym] || (raise ArgumentError, "attr #{attr} does not exist in schema")
-        layer  = opts[:layer]        || (layers.keys.first if layers.size == 1)
-        layer  = layer.to_s.sub('_', '-').to_sym if layer
-        meta   = layers[layer]
-
-        meta.merge(opts).merge(:layer => layer) if meta
-      end
-
-      def layer_attr(attr, opts=nil)
-        @layer_attr ||= {}
-        if opts
-          @layer_attr[attr] = opts
-        else
-          @layer_attr[attr] || {}
-        end
-      end
-
       def make_attr_method(attr, opts = {})
-        meta = attr_meta(attr, opts)
+        schema = attr_schema(attr, opts)
 
         define_method(attr) do |*args|
-          raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" unless meta or args.size == 1
+          raise ArgumentError, "wrong number of arguments (#{args.size} for 1)" unless schema or args.size == 1
           if args.empty?
-            get_attr(attr, meta)
+            get_attr(attr, schema)
           else
             get_attr(attr, args.first)
           end
         end
         attr_methods << attr
 
-        if meta and 'boolean' == meta[:type].to_s
+        if schema and 'boolean' == schema[:type].to_s
           name = "#{attr}?"
           define_method(name) do
             !!send(attr)
@@ -158,12 +140,12 @@ module ActiveNode
         end
       end
 
-      def get_attr(attr, meta = {})
-        meta  = self.class.attr_meta(attr, :layer => meta) if meta.kind_of?(Symbol)
-        meta  = self.class.attr_meta(attr, meta)           if meta[:layer].nil?
-        layer = meta[:layer]
+      def get_attr(attr, schema = {})
+        schema = attr_schema(attr, :layer => schema) if schema.kind_of?(Symbol)
+        schema = attr_schema(attr, schema)           if schema[:layer].nil?
+        layer  = schema[:layer]
 
-        if meta[:contained]
+        if schema[:contained]
           data = node_container.layer_data(layer)[node_type]
         else
           data = layer_data(layer)
@@ -171,7 +153,7 @@ module ActiveNode
         return unless data
 
         attr = attr.to_s
-        if klass = meta[:class]
+        if klass = schema[:class]
           return data[attr].to_sym if klass == 'Symbol'
           klass.constantize.new(data[attr])
         else
