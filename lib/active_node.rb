@@ -100,6 +100,7 @@ end
 require 'active_node/base'
 require 'active_node/server'
 require 'active_node/schema'
+require 'active_node/writers'
 require 'active_node/containment'
 require 'active_node/attributes'
 require 'active_node/collection'
@@ -117,6 +118,8 @@ class Class
 
     extend  ActiveNode::Schema::ClassMethods
     include ActiveNode::Schema::InstanceMethods
+
+    extend  ActiveNode::Writers::ClassMethods
 
     if opts[:attributes]
       extend  ActiveNode::Attributes::ClassMethods
