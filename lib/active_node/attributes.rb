@@ -20,8 +20,8 @@ module ActiveNode
         node = nil
         add(attrs) do |*args|
           Utils.ensure_arity(args, 1)
-          node_id = next_node_id
           attrs   = args.first || {} unless args.empty?
+          node_id = attrs.delete(:node_id) || next_node_id
           params  = attrs.meta[:active_node_params] || {}
           path    = attrs.meta[:active_node_path]   || 'add'
 
