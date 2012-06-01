@@ -28,15 +28,21 @@ module ActiveNode
 
     def assoc_params(params)
       raise ArgumentError, "cannot change params without uri" unless @uri
-      self.class.new(@uri, @params.merge(params))
+      self.class.new(@uri, @params.merge(params), &@extract)
     end
 
-    def limit(limit, offset = nil)
-      assoc_params(:limit => limit, :offset => offset)
-    end
+    def limit(limit, opts = {})
+      offset = if opts[:page]
+        opts[:page] * limit
+      else
+        opts[:offset] || 0
+      end
 
-    def page(page)
-      assoc_params(:page => page)
+      if @node_ids
+        self.class.new(@node_ids.limit(limit, offset), @edge_data)
+      else
+        assoc_params(:limit => limit, :offset => offset)
+      end
     end
 
     def node_ids(node_type=nil)
