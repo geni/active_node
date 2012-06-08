@@ -144,28 +144,35 @@ module ActiveNode
           ActiveNode::Base.after_success(results)
           return results
         else
-          error = ActiveNode::Error.new("#{method} to #{url} failed with HTTP #{curl.response_code}")
-          error.cause = parse_body(curl.body_str) || {}
+          cause = parse_body(curl.body_str)
+          raise_error(ActiveNode::Error, method, url, "HTTP #{curl.response_code}", cause)
         end
       rescue Curl::Err::ConnectionFailedError, Curl::Err::HostResolutionError => e
-        fallback_hosts.each do |host|
-          server = Server.init(type, host)
-          next if server == self
-          begin
-            return server.send(:http, opts.merge(:fallback => true))
-          rescue ActiveNode::ConnectionError
-          end
-        end unless opts[:fallback]
-
-        error = ActiveNode::ConnectionError.new("#{e.class} on #{method} to #{url}: #{e.message}")
+        fallback(opts) || raise_error(ActiveNode::ConnectionError, method, url, e, opts)
       rescue Curl::Err::CouldntReadError, Curl::Err::RecvError, Curl::Err::GotNothingError => e
-        error = ActiveNode::ReadError.new("#{e.class} on #{method} to #{url}: #{e.message}")
+        fallback(opts) || raise_error(ActiveNode::ReadError, method, url, e, opts)
       rescue Curl::Err::TimeoutError => e
-        error = ActiveNode::TimeoutError.new("#{e.class} on #{method} to #{url}: #{e.message}")
-        error.cause = {:timeout => timeout}
+        raise_error(ActiveNode::TimeoutError, method, url, e, opts.merge(:timeout => timeout))
       end
-      error.cause ||= {}
-      error.cause.merge!(opts)
+    end
+
+    def fallback(opts)
+      return if opts[:fallback]
+      fallback_hosts.each do |host|
+        ActiveNode::Base.on_fallback(host, opts)
+        server = Server.init(type, host)
+        begin
+          return server.send(:http, opts.merge(:fallback => true))
+        rescue ActiveNode::ConnectionError, ActiveNode::ReadError
+        end
+      end
+      nil
+    end
+
+    def raise_error(error_class, method, url, e, cause = nil)
+      e = "#{e.class}: #{e.message}" unless e.kind_of?(String)
+      error = error_class.new("#{method} to #{url} failed with #{e}")
+      error.cause = cause || {}
       raise error
     end
 

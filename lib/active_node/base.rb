@@ -110,6 +110,10 @@ class ActiveNode::Base
       # Called after an HTTP success response is received from an ActiveNode::Server.
     end
 
+    def on_fallback(host, opts)
+      # Called when an error causes us to fallback to a different server.
+    end
+
     def modify_read_params(params)
       # Called to allow modification of params before read_graph dispatches to ActiveNode::Server.
       params
