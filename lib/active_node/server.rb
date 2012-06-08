@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'curb'
 require 'json'
+require 'deep_hash'
 
 module ActiveNode
   class Server
@@ -9,14 +10,15 @@ module ActiveNode
     RETRY_LIMIT = 5
     RETRY_WAIT  = 1..3
 
-    attr_reader :host
+    attr_reader :type, :host
 
-    def self.init(host)
-      @servers ||= {}
-      @servers[host] ||= new(host)
+    def self.init(type, host)
+      @servers ||= Hash.deep(1)
+      @servers[type][host] ||= new(type, host)
     end
 
-    def initialize(host)
+    def initialize(type, host)
+      @type = type
       @host = host || DEFAULT_HOST
     end
 
@@ -103,7 +105,7 @@ module ActiveNode
 
     def fallback_hosts
       if @fallback_hosts.nil?
-        @fallback_hosts = ActiveNode.fallback_hosts.dup
+        @fallback_hosts = ActiveNode.fallback_hosts(type).dup
         @fallback_hosts.delete(host)
       end
       @fallback_hosts
@@ -147,7 +149,7 @@ module ActiveNode
         end
       rescue Curl::Err::ConnectionFailedError, Curl::Err::HostResolutionError => e
         fallback_hosts.each do |host|
-          server = Server.init(host)
+          server = Server.init(type, host)
           next if server == self
           begin
             return server.send(:http, opts.merge(:fallback => true))

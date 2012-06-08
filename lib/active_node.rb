@@ -17,7 +17,7 @@ module ActiveNode
     end
     host = host.choice if host.respond_to?(:choice) # choose a random server
 
-    Server.init(host)
+    Server.init(type, host)
   end
 
   # inspired by Sinatra (sinatrarb.com)
@@ -80,9 +80,10 @@ module ActiveNode
     absolute_path?(path) ? path : ['', base, path].compact.join('/') # support relative and absolute paths
   end
 
-  def self.fallback_hosts(hosts = nil)
-    @fallback_hosts = hosts if hosts
-    @fallback_hosts || []
+  def self.fallback_hosts(type, hosts = nil)
+    @fallback_hosts ||= {}
+    @fallback_hosts[type] = hosts if hosts
+    @fallback_hosts[type] || []
   end
 
 private
