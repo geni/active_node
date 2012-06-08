@@ -58,7 +58,7 @@ module ActiveNode
       @@bulk_params = params
       yield
       results = []
-      @@bulk.each do |server, bulk|
+      ActiveNode::Utils.parallel(@@bulk) do |server, bulk|
         server.bulk_read(bulk[:requests], params).zip(bulk[:ids]) do |result, id|
           results[id] = result
         end
