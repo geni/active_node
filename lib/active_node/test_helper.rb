@@ -13,6 +13,11 @@ module ActiveNode
       self
     end
 
+    def set_type!(type)
+      @type = type
+      self
+    end
+
   private
 
     def http(opts)
@@ -34,7 +39,8 @@ module ActiveNode
     def mock_active_node(*responses)
       server = ActiveNode::TestServer.new(*responses)
 
-      ActiveNode::Server.stubs(:init).with do |host|
+      ActiveNode::Server.stubs(:init).with do |type, host|
+        server.set_type!(type)
         server.set_host!(host)
       end.returns(server)
 
