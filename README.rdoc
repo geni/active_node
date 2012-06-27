@@ -10,7 +10,3 @@ bridge Jiraph to Ruby.
 http://github.com/flatland/jiraph
 
 http://github.com/flatland/wakeful
-
-== License:
-
-Copyright (c) 2012 Justin Balthrop, Geni.com; Published under The MIT License, see LICENSE
