@@ -5,10 +5,11 @@ than ActiveResource and is specifically built with a Jiraph-based graph service 
 mind. Because of this, it probably will only be useful to developers who are trying to
 bridge Jiraph to Ruby.
 
-== More information:
+== More information
 
-Jiraph:  http://github.com/flatland/jiraph
-Wakeful: http://github.com/flatland/wakeful
+http://github.com/flatland/jiraph
+
+http://github.com/flatland/wakeful
 
 == License:
 
