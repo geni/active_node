@@ -1,10 +1,15 @@
 = ActiveNode
 
-ActiveNode is a very thin, restful resource wrapper. It is meant to be much more lightweight
+ActiveNode is a thin, wakeful resource wrapper. It is meant to be much more lightweight
 than ActiveResource and is specifically built with a Jiraph-based graph service in
-mind. Because of this, it probably will only be usefull to developers who are trying to
-bridge Jiraph to Ruby. For more information on Jiraph, see: http://github.com/ninjudd/jiraph.
+mind. Because of this, it probably will only be useful to developers who are trying to
+bridge Jiraph to Ruby.
+
+== More information:
+
+Jiraph:  http://github.com/flatland/jiraph
+Wakeful: http://github.com/flatland/wakeful
 
 == License:
 
-Copyright (c) 2010 Justin Balthrop, Geni.com; Published under The MIT License, see LICENSE
+Copyright (c) 2012 Justin Balthrop, Geni.com; Published under The MIT License, see LICENSE
