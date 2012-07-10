@@ -180,9 +180,10 @@ module ActiveNode
       if params
         raise ArgumentError, "params must be Hash" unless params.kind_of?(Hash)
         "?" << params.collect do |key, val|
+          next if val.nil?
           val = val.join(',') if val.kind_of?(Array)
           "#{CGI.escape(key.to_s)}=#{CGI.escape(val.to_s)}"
-        end.join('&')
+        end.compact.join('&')
       end
     end
 
