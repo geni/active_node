@@ -66,10 +66,10 @@ module ActiveNode
     absolute_path?(path) ? path : ['', base, path].compact.join('/') # support relative and absolute paths
   end
 
-  def self.fallback_hosts(hosts = nil)
+  def self.fallback_hosts(type, hosts = nil)
     @fallback_hosts ||= {}
-    @fallback_hosts = hosts if hosts
-    @fallback_hosts || []
+    @fallback_hosts[type] = hosts if hosts
+    @fallback_hosts[type] || []
   end
 
 protected 
