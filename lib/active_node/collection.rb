@@ -172,12 +172,12 @@ module ActiveNode
       end
       return if layers.empty?
 
-      ActiveNode.bulk_read do
+      ActiveNode::Base.bulk_read do
         revisions.each do |revision|
           node_ids.each do |node_id|
             if ActiveNode::Base.node_id(node_id, type)
               opts = Collection.revision_opts(revision)
-              ActiveNode.read_graph("/#{node_id}/data/#{layers.join(',')}", opts)
+              ActiveNode::Base.read_graph("/#{node_id}/data/#{layers.join(',')}", opts)
             end
           end
         end
@@ -195,10 +195,10 @@ module ActiveNode
     def fetch_layer_revisions(type, layers)
       return if layers.empty?
 
-      ActiveNode.bulk_read do
+      ActiveNode::Base.bulk_read do
         node_ids.each do |node_id|
           if ActiveNode::Base.node_id(node_id, type)
-            ActiveNode.read_graph("/#{node_id}/revisions/#{layers.join(',')}")
+            ActiveNode::Base.read_graph("/#{node_id}/revisions/#{layers.join(',')}")
           end
         end
       end.collect do |layer_revisions|
@@ -270,9 +270,9 @@ module ActiveNode
             Utils.ensure_arity(args, 1)
             opts = defaults.merge(args.first || {}).merge!(:count => true)
             has_cache[count][opts] ||= if (type == :walk)
-              ActiveNode.read_graph("/#{node_id}/#{path}", opts)['count']
+              ActiveNode::Base.read_graph("/#{node_id}/#{path}", opts)['count']
             else
-              ActiveNode.read_graph("/#{node_id}/#{type}/#{path}", opts)[path][type.to_s]
+              ActiveNode::Base.read_graph("/#{node_id}/#{type}/#{path}", opts)[path][type.to_s]
             end
           end
         end
@@ -342,7 +342,7 @@ module ActiveNode
     def fetch
       return unless @uri
 
-      response = @extract.call(ActiveNode.read_graph(@uri, @params))
+      response = @extract.call(ActiveNode::Base.read_graph(@uri, @params))
       @node_ids  = response['node_ids'].to_ordered_set.freeze
       @count     = response['count']
       @edge_data = (response['data'] || {}).freeze

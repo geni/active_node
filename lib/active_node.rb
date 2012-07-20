@@ -58,6 +58,22 @@ module ActiveNode
     @routes = old_routes
   end
 
+  def self.init(*args)
+    ActiveNode::Base.init(*args)
+  end
+
+  def self.resolve_path(path, base = nil)
+    absolute_path?(path) ? path : ['', base, path].compact.join('/') # support relative and absolute paths
+  end
+
+  def self.fallback_hosts(hosts = nil)
+    @fallback_hosts ||= {}
+    @fallback_hosts = hosts if hosts
+    @fallback_hosts || []
+  end
+
+protected 
+
   def self.read_graph(path, params = {})
     path = resolve_path(path)
     server(:read, path).read(path, params)
@@ -70,20 +86,6 @@ module ActiveNode
 
   def self.bulk_read(params = {}, &block)
     ActiveNode::Server.bulk_read(params, &block)
-  end
-
-  def self.init(*args)
-    ActiveNode::Base.init(*args)
-  end
-
-  def self.resolve_path(path, base = nil)
-    absolute_path?(path) ? path : ['', base, path].compact.join('/') # support relative and absolute paths
-  end
-
-  def self.fallback_hosts(type, hosts = nil)
-    @fallback_hosts ||= {}
-    @fallback_hosts[type] = hosts if hosts
-    @fallback_hosts[type] || []
   end
 
 private
