@@ -63,10 +63,12 @@ module ActiveNode
 
         case schema[:type]
         when 'map'
+          value = value.to_hash unless value.is_a?(Hash)
           value.inject({}) do |attrs, (key, val)|
             attrs.merge!(key => filter_schema(val, schema[:values]))
           end
         when 'struct'
+          value = value.to_hash unless value.is_a?(Hash)
           value.inject({}) do |attrs, (key, val)|
             next attrs unless sub_schema = schema[:fields][key.to_sym]
             attrs.merge!(key => filter_schema(val, sub_schema))
