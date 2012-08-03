@@ -58,7 +58,8 @@ module ActiveNode
             :attrs    => graph_attrs,
           }
         end
-        node
+
+        node.reset
       end
 
       def make_attr_method(attr, opts = {})
