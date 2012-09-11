@@ -183,7 +183,7 @@ module ActiveNode
           response = write_graph('delete', nil)#, nil)
 
           if self.class.ar_class
-            ar_instance.delete
+            ar_instance.destroy
           end
 
           { # return this stuff to update() in case they need it
