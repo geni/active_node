@@ -206,6 +206,23 @@ class AttributesTest < Test::Unit::TestCase
 
     end # context 'update!'
 
+    context 'delete!' do
+
+      should 'call graph' do
+        mock_active_node(person_schema) do |server|
+          Person.init('person-1').delete!
+
+          assert_equal 1, server.requests.size
+
+          req = server.requests.shift
+          assert_equal :write,              req[:method]
+          assert_equal '/person-1/delete',  req[:path]
+        end
+      end
+
+    end # context 'delete!'
+
+
     should 'fetch layer data' do
       p = Person.init('person-42')
 

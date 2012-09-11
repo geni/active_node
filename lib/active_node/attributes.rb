@@ -157,20 +157,40 @@ module ActiveNode
             end
           end if attrs
           return self if attrs.nil? or attrs.empty?
-          
+
           graph_attrs = attrs_in_schema(attrs)
           response    = write_graph(path, graph_attrs, params) unless graph_attrs.empty?
-          
+
           if self.class.ar_class
             ar_instance.update_attributes!(attrs)
           end
-          
+
           reset
           { # return this stuff to update() in case they need it
             :response => response,
             :attrs    => graph_attrs,
           }
         end
+        self
+      end
+
+      def delete
+        yield
+      end
+
+      def delete!
+        delete do
+          response = write_graph('delete', nil)#, nil)
+
+          if self.class.ar_class
+            ar_instance.delete
+          end
+
+          { # return this stuff to update() in case they need it
+            :response => response,
+          }
+        end
+
         self
       end
 
