@@ -85,7 +85,7 @@ class AttributesTest < Test::Unit::TestCase
           mock_active_node(next_node_id('42'), person_schema) do |server|
             ar_class = ArPerson.ar_class
             ar_class.stubs(:table_exists? => false, :columns => [])
-            ar_class.expects(:create!).with(:node_id => '42', :string => 'string')
+            ar_class.expects(:create!).with(:node_id => 42, :string => 'string')
             ArPerson.add!(:string => 'string')
           end
         end
