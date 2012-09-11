@@ -46,7 +46,7 @@ module ActiveNode
 
           if ar_class
             ar_instance = ar_class.class_eval do
-              create!(attrs.merge(node_id_column => node_id))
+              create!(attrs.merge(node_id_column => ActiveNode::Base.node_number(node_id)))
             end
             node.instance_variable_set(:@ar_instance, ar_instance)
             ar_instance.instance_variable_set(:@node, node)
