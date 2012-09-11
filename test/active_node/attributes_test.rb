@@ -90,7 +90,22 @@ class AttributesTest < Test::Unit::TestCase
           end
         end
       end
-    end
+
+      context 'delete!' do
+        should 'call delete method' do
+          mock_active_node(next_node_id('42'), person_schema) do |server|
+            ar_class = ArPerson.ar_class
+            ar_class.stubs(:table_exists? => false, :columns => [])
+            ar_class.expects(:create!).with(:node_id => 42, :string => 'string')
+            person = ArPerson.add!(:string => 'string')
+
+            person.stubs(:find_ar_instance => mock('ar_instance', :delete => nil))
+            person.delete!
+          end
+        end
+      end
+
+    end # with active_record
 
     should 'automatically create readers' do
       data1 = [{
