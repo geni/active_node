@@ -62,6 +62,11 @@ module ActiveNode
         node.reset
       end
 
+      def lookup(by_attrs)
+        response = read_graph('lookup', by_attrs)
+        Collection.new(response['ids'])
+      end
+
       def make_attr_method(attr, opts = {})
         schema = attr_schema(attr, opts)
 
