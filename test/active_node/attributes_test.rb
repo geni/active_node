@@ -175,6 +175,22 @@ class AttributesTest < Test::Unit::TestCase
         assert_equal [["/person-1/data/b", {}]], req[:data]
       end
     end
+
+    context 'lookuup' do
+      should 'call graph' do
+        response = {'ids' => ['person-1']}
+        mock_active_node(response) do |server|
+          p = Person.lookup(:string => 'string')
+
+          assert_equal 1, server.requests.size, 'only 3 requests should have been made'
+
+          req = server.requests.shift
+          assert_equal :read,             req[:method]
+          assert_equal '/person/lookup',  req[:path]
+        end
+      end
+    end # context 'lookup'
+
   end # context 'An ActiveNode class'
 
   context "An ActiveNode model" do
