@@ -181,8 +181,10 @@ class AttributesTest < Test::Unit::TestCase
         response = {'ids' => ['person-1']}
         mock_active_node(response) do |server|
           p = Person.lookup(:string => 'string')
+          assert_equal 0, server.requests.size, 'no requests should have been made'
 
-          assert_equal 1, server.requests.size, 'only 3 requests should have been made'
+          p.count
+          assert_equal 1, server.requests.size, 'only 1 requests should have been made'
 
           req = server.requests.shift
           assert_equal :read,             req[:method]

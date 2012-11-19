@@ -343,7 +343,7 @@ module ActiveNode
       return unless @uri
 
       response = @extract.call(ActiveNode::Base.read_graph(@uri, @params))
-      @node_ids  = response['node_ids'].to_ordered_set.freeze
+      @node_ids  = (response['node_ids'] || response['ids'] || []).to_ordered_set.freeze
       @count     = response['count']
       @edge_data = (response['data'] || {}).freeze
     end

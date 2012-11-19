@@ -63,8 +63,7 @@ module ActiveNode
       end
 
       def lookup(by_attrs)
-        response = read_graph('lookup', by_attrs)
-        Collection.new(response['ids'] || [])
+        Collection.new(ActiveNode.resolve_path('lookup', node_type), by_attrs)
       end
 
       def make_attr_method(attr, opts = {})
