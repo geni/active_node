@@ -195,6 +195,8 @@ module ActiveNode
           }
         end
 
+        reset
+
         self
       end
 
