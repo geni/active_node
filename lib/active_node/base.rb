@@ -50,7 +50,8 @@ class ActiveNode::Base
 
     def node_number(node_or_id, type = node_type)
       return node_or_id if node_or_id.kind_of?(Integer)
-      split_node_id(node_id(node_or_id, type)).last.to_i
+      type, number = split_node_id(node_id(node_or_id, type))
+      return number.to_i if number
     end
 
     def split_node_id(node_id)
