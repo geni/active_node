@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'test/unit'
 require 'shoulda'
-require 'mocha'
+require 'mocha/setup'
 require 'pp'
 require 'active_record'
 
