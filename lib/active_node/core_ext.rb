@@ -7,7 +7,7 @@ class String
       tr("-", "_").downcase
   end unless instance_methods.include?('underscore')
 
-  def camelize
+  def camelize(*args)
     gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
   end unless instance_methods.include?('camelize')
 
