@@ -40,9 +40,9 @@ class ActiveNode::Base
       if id_or_node.respond_to?(:node_id)
         id_or_node.node_id
       elsif id_or_node.kind_of?(String)
-        id_type = split_node_id(id_or_node).first
+        id_type, id_number = split_node_id(id_or_node)
         return if type and id_type != type
-        id_or_node
+        "#{id_type}-#{id_number}"
       elsif id_or_node.kind_of?(Integer)
         "#{type}-#{id_or_node}"
       end
