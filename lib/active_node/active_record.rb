@@ -8,6 +8,8 @@ module ActiveNode::ActiveRecord
     @ar_class.send(:extend,  ClassMethods)
     @ar_class.send(:include, InstanceMethods)
 
+    active_record_compatibility if opts[:compatibility]
+
     define_method :ar_instance do
       if @ar_instance.nil?
         @ar_instance = find_ar_instance || new_ar_instance

@@ -137,6 +137,7 @@ class Class
       include ActiveNode::ActiveRecord::InstanceMethods
     else
       extend ActiveNode::ActiveRecord
+      extend ActiveNode::ActiveRecordCompatibility
     end
     node_type opts[:node_type]
   end
