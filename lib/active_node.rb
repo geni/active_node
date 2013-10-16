@@ -1,5 +1,3 @@
-require 'rupture'
-
 module ActiveNode
   class Error < StandardError
     attr_accessor :cause
@@ -139,9 +137,30 @@ class Class
       include ActiveNode::ActiveRecord::InstanceMethods
     else
       extend ActiveNode::ActiveRecord
+      extend ActiveNode::ActiveRecordCompatibility
     end
     node_type opts[:node_type]
   end
 end
 
 ActiveNode::Base.active_node(:attributes => true)
+
+class Hash
+  def meta
+    @_meta ||= {}
+  end
+
+  def symbolize_keys!
+    keys.each do |key|
+      self[(key.to_sym rescue key) || key] = delete(key)
+    end
+    self
+  end
+
+  def deep_symbolize_keys!
+    values.each do |val|
+      val.deep_symbolize_keys! if val.is_a?(Hash)
+    end
+    symbolize_keys!
+  end
+end
