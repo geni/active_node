@@ -172,7 +172,7 @@ module ActiveNode
     def raise_error(error_class, method, url, e, opts = {})
       e = "#{e.class}: #{e.message}" unless e.kind_of?(String)
 
-      ActiveNode::Base.after_failure(opts.merge(:message => e, :class => error_class)
+      ActiveNode::Base.after_failure(opts.merge(:message => e, :class => error_class))
 
       error = error_class.new("#{method} to #{url} failed with #{e}")
       error.cause = opts || {}
