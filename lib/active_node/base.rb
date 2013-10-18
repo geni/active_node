@@ -113,6 +113,11 @@ class ActiveNode::Base
       # Called after an HTTP success response is received from an ActiveNode::Server.
     end
 
+    def after_failure(opts)
+      # Called after an HTTP failure response is received from an ActiveNode::Server or
+      # when another connection error occurs.
+    end
+
     def on_fallback(host, opts)
       # Called when an error causes us to fallback to a different server.
     end

@@ -144,8 +144,8 @@ module ActiveNode
           ActiveNode::Base.after_success(results)
           return results
         else
-          cause = parse_body(curl.body_str)
-          raise_error(ActiveNode::Error, method, url, "HTTP #{curl.response_code}", cause)
+          response = parse_body(curl.body_str)
+          raise_error(ActiveNode::Error, method, url, "HTTP #{curl.response_code}", opts.merge(:response => response))
         end
       rescue Curl::Err::ConnectionFailedError, Curl::Err::HostResolutionError => e
         fallback(opts) || raise_error(ActiveNode::ConnectionError, method, url, e, opts)
@@ -169,10 +169,13 @@ module ActiveNode
       nil
     end
 
-    def raise_error(error_class, method, url, e, cause = nil)
+    def raise_error(error_class, method, url, e, opts = {})
       e = "#{e.class}: #{e.message}" unless e.kind_of?(String)
+
+      ActiveNode::Base.after_failure(opts.merge(:message => e, :class => error_class)
+
       error = error_class.new("#{method} to #{url} failed with #{e}")
-      error.cause = cause || {}
+      error.cause = opts || {}
       raise error
     end
 
