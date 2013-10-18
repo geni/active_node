@@ -140,7 +140,7 @@ module ActiveNode
         curl.send("http_#{method}", *body)
         if curl.response_code.between?(200, 299)
           results = parse_body(curl.body_str)
-          results.meta.merge!(opts.merge(:time => curl.total_time))
+          results.meta.merge!(opts.merge(:duration => curl.total_time))
           ActiveNode::Base.after_success(results)
           return results
         else
