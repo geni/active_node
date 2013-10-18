@@ -5,10 +5,11 @@ module ActiveNode::ActiveRecordCompatibility
   end
 
   module ClassMethods
-    def find(*args)
-      id = args.first
-      if id.kind_of?(Integer)
+    def find(first, *args)
+      if first.kind_of?(Integer)
         init(id)
+      elsif first.kind_of?(Array)
+        ActiveNode::Collection.new(first.map {|x| node_id(x)}).to_a
       else
         raise ActiveNode::Error, "find with args (#{args}) not supported"
       end
