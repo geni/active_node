@@ -26,6 +26,10 @@ module ActiveNode
       clear_cache
     end
 
+    def self.init(node_class, ids)
+      new(ids.map {|id| node_class.node_id(id)})
+    end
+
     def assoc_params(params)
       raise ArgumentError, "cannot change params without uri" unless @uri
       self.class.new(@uri, @params.merge(params), &@extract)
