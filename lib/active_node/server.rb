@@ -2,6 +2,7 @@ require 'rubygems'
 require 'curb'
 require 'json'
 require 'deep_hash'
+require 'thread'
 
 module ActiveNode
   class Server
@@ -50,6 +51,7 @@ module ActiveNode
       @@bulk        = {}
       @@bulk_params = nil
       @@bulk_count  = 0
+      @@after_bulk  = []
     end
     clear_bulk_queue!
 
@@ -65,6 +67,7 @@ module ActiveNode
       end
       results
     ensure
+      @@after_bulk.each {|block| block.call}
       clear_bulk_queue!
     end
 
@@ -113,6 +116,17 @@ module ActiveNode
 
   private
 
+    @@mutex = Mutex.new
+    def on_main_thread(&block)
+      if @@bulk_params
+        @@mutex.synchronize do
+          @@after_bulk << block
+        end
+      else
+        block.call
+      end
+    end
+
     def time_usec
       t = Time.now
       t.usec + t.to_i * 1_000_000
@@ -141,7 +155,9 @@ module ActiveNode
         if curl.response_code.between?(200, 299)
           results = parse_body(curl.body_str)
           results.meta.merge!(opts.merge(:duration => curl.total_time * 1000))
-          ActiveNode::Base.after_success(results)
+          on_main_thread do
+            ActiveNode::Base.after_success(results)
+          end
           return results
         else
           response = parse_body(curl.body_str)
@@ -159,7 +175,9 @@ module ActiveNode
     def fallback(opts)
       return if opts[:fallback]
       fallback_hosts.each do |host|
-        ActiveNode::Base.on_fallback(host, opts)
+        on_main_thread do
+          ActiveNode::Base.on_fallback(host, opts)
+        end
         server = Server.init(type, host)
         begin
           return server.send(:http, opts.merge(:fallback => true))
@@ -172,7 +190,9 @@ module ActiveNode
     def raise_error(error_class, method, url, e, opts = {})
       e = "#{e.class}: #{e.message}" unless e.kind_of?(String)
 
-      ActiveNode::Base.after_failure(opts.merge(:message => e, :class => error_class))
+      on_main_thread do
+        ActiveNode::Base.after_failure(opts.merge(:message => e, :class => error_class))
+      end
 
       error = error_class.new("#{method} to #{url} failed with #{e}")
       error.cause = opts || {}
