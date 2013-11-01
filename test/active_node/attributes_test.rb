@@ -82,7 +82,7 @@ class AttributesTest < Test::Unit::TestCase
 
       context 'add!' do
         should 'call create! method' do
-          mock_active_node(next_node_id('42'), person_schema) do |server|
+          mock_active_node(next_node_id(42), person_schema) do |server|
             ar_class = ArPerson.ar_class
             ar_class.stubs(:table_exists? => false, :columns => [])
             ar_class.expects(:create!).with(:node_id => 42, :string => 'string')
@@ -93,7 +93,7 @@ class AttributesTest < Test::Unit::TestCase
 
       context 'delete!' do
         should 'call destroy method' do
-          mock_active_node(next_node_id('42'), person_schema) do |server|
+          mock_active_node(next_node_id(42), person_schema) do |server|
             ar_class = ArPerson.ar_class
             ar_class.stubs(:table_exists? => false, :columns => [])
             ar_class.expects(:create!).with(:node_id => 42, :string => 'string')
@@ -129,12 +129,12 @@ class AttributesTest < Test::Unit::TestCase
       mock_active_node(person_schema, data1, data2) do |server|
         p = Person.init('person-1')
 
-        assert_equal false, Person.instance_methods.include?('int'),    "int should not be defined"
-        assert_equal false, Person.instance_methods.include?('string'), "string should not be defined"
-        assert_equal false, Person.instance_methods.include?('bool'),   "bool should not be defined"
-        assert_equal false, Person.instance_methods.include?('bool?'),  "bool? should not be defined"
-        assert_equal false, Person.instance_methods.include?('foo'),    "foo should not be defined"
-        assert_equal false, Person.instance_methods.include?('bar'),    "bar should not be defined"
+        assert_equal false, Person.instance_methods.include?(:int),    "int should not be defined"
+        assert_equal false, Person.instance_methods.include?(:string), "string should not be defined"
+        assert_equal false, Person.instance_methods.include?(:bool),   "bool should not be defined"
+        assert_equal false, Person.instance_methods.include?(:bool?),  "bool? should not be defined"
+        assert_equal false, Person.instance_methods.include?(:foo),    "foo should not be defined"
+        assert_equal false, Person.instance_methods.include?(:bar),    "bar should not be defined"
 
         assert_raises(ArgumentError) do
           p.foo
@@ -151,12 +151,12 @@ class AttributesTest < Test::Unit::TestCase
         assert_equal 'ABC',   p.foo(:a)
         assert_equal 123,     p.foo(:b)
 
-        assert_equal true, Person.instance_methods.include?('int'),    "int should not be defined"
-        assert_equal true, Person.instance_methods.include?('string'), "string should not be defined"
-        assert_equal true, Person.instance_methods.include?('bool'),   "bool should not be defined"
-        assert_equal true, Person.instance_methods.include?('bool?'),  "bool? should not be defined"
-        assert_equal true, Person.instance_methods.include?('foo'),    "foo should not be defined"
-        assert_equal true, Person.instance_methods.include?('bar'),    "bar should not be defined"
+        assert_equal true, Person.instance_methods.include?(:int),    "int should now be defined"
+        assert_equal true, Person.instance_methods.include?(:string), "string should now be defined"
+        assert_equal true, Person.instance_methods.include?(:bool),   "bool should now be defined"
+        assert_equal true, Person.instance_methods.include?(:bool?),  "bool? should now be defined"
+        assert_equal true, Person.instance_methods.include?(:foo),    "foo should now be defined"
+        assert_equal true, Person.instance_methods.include?(:bar),    "bar should now be defined"
 
         assert_equal 3, server.requests.size, 'only 2 requests should have been made'
 

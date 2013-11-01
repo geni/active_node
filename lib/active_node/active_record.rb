@@ -36,8 +36,8 @@ module ActiveNode::ActiveRecord
   def ar_parent_class
     if ActiveNode::Base == superclass
       ActiveRecord::Base
-    elsif defined?(superclass::ActiveRecord)
-      superclass::ActiveRecord
+    elsif superclass.const_defined?('ActiveRecord', false)
+      superclass.const_get('ActiveRecord')
     else
       ActiveRecord::Base
     end

@@ -13,7 +13,8 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rake'
   gem.add_development_dependency 'shoulda', '3.0.1'
   gem.add_development_dependency 'mocha'
-  gem.add_development_dependency 'activerecord', '~> 2.3.9'
+  gem.add_development_dependency 'iconv'
+  gem.add_development_dependency 'activerecord', '~> 2.3.18'
 
   gem.add_dependency 'curb'
   gem.add_dependency 'json'
